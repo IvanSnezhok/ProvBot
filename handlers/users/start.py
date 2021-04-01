@@ -9,6 +9,7 @@ from keyboards.default.buttons import tel_button
 from keyboards.inline.callback_datas import start_callback
 from keyboards.inline.start_keyboard import choice_lang
 from loader import dp
+from utils.format_number import format_number
 
 
 @dp.message_handler(CommandStart())
@@ -48,4 +49,6 @@ async def ua_reply(call: CallbackQuery, callback_data: dict):
 @dp.message_handler(content_types=types.ContentType.CONTACT)
 async def ua_tel_get(message: types.Message):
     tel = message.contact
-    await message.answer(text=f"Ваш номер {tel.phone_number}")
+    tel = format_number(tel.phone_number)
+    print(tel)
+    await message.answer(text=f"Ваш номер {tel}")

@@ -5,4 +5,4 @@ tel_button = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
         KeyboardButton(text="📱",
                        request_contact=True)
     ]
-],one_time_keyboard=True)
+], one_time_keyboard=True)

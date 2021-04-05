@@ -1,12 +1,19 @@
+import logging
+
 from aiogram import executor
 
-from loader import dp
+from loader import dp, db
 import middlewares, filters, handlers
 from utils.notify_admins import on_startup_notify, on_shutdown_notify
 
 
 async def on_startup(dispatcher):
     # Уведомляет про запуск
+    logging.info("Создаем подключение к локальной ДБ")
+    await db.create()
+    logging.info("Создаем таблицу пользователей")
+    await db.create_table_users()
+    logging.info("Готово.")
     await on_startup_notify(dispatcher)
 
 

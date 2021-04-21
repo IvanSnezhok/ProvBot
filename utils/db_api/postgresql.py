@@ -47,7 +47,7 @@ class Database:
         username VARCHAR(255) NULL,
         telegram_id BIGINT NOT NULL UNIQUE, 
         lang VARCHAR(5) NULL,
-        message_text VARCHAR(255) NULL         
+        phone_number VARCHAR(255) NULL         
         );
         """
         await self.execute(sql, execute=True)
@@ -80,6 +80,10 @@ class Database:
     async def update_user_username(self, username, telegram_id):
         sql = "UPDATE Users SET username=$1 WHERE telegram_id=$2"
         return await self.execute(sql, username, telegram_id, execute=True)
+
+    async def update_phone_number(self, phone_number, telegram_id):
+        sql = "UPDATE Users SET phone_number=$1 WHERE telegram_id=$2"
+        return await self.execute(sql, phone_number, telegram_id, execute=True)
 
     async def delete_users(self):
         await self.execute("DELETE FROM Users WHERE TRUE", execute=True)

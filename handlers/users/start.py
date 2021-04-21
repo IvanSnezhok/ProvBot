@@ -7,11 +7,11 @@ from aiogram.dispatcher.filters.builtin import CommandStart, Text
 from aiogram.types import CallbackQuery, ReplyKeyboardRemove
 
 from data.config import ADMINS
-from keyboards.default.buttons import tel_button, return_button, request_button
+from keyboards.default.buttons import tel_button, return_button, request_button, client_request
 from keyboards.inline.callback_datas import start_callback
 from keyboards.inline.start_keyboard import choice_lang
 from loader import dp, db
-from states.get_client import Client
+from states.get_client import Client, Request
 from utils.db_api import database
 from utils.format_number import format_number
 
@@ -67,6 +67,7 @@ async def ua_reply(call: CallbackQuery, callback_data: dict):
 async def ua_tel_get(message: types.Message):
     tel = message.contact.phone_number
     tel = format_number(tel)
+    await db.update_phone_number(tel, message.from_user.id)
     await database.search_query(tel)
     # print(database.data) # вывод результата поиска
     if len(database.data) > 0:
@@ -75,7 +76,7 @@ async def ua_tel_get(message: types.Message):
                                   f"Ваш номер договору: {database.data[2]}\n"
                                   f"Ваше ФИО: {database.data[3]}\n"
                                   f"Стан послуги: {database.data[4]}\n"
-                                  f"Ваш пакет: {database.data[5]}", reply_markup=ReplyKeyboardRemove())
+                                  f"Ваш пакет: {database.data[5]}", reply_markup=client_request)
     else:
         await message.answer(text="Ви не зареєстровані у нашому білінгу\n"
                                   "Якщо ви хочете підключитися можете залишити заявку на підключення натиснувши "
@@ -84,7 +85,30 @@ async def ua_tel_get(message: types.Message):
                              reply_markup=request_button)
 
 
-@dp.message_handler(Text(equals="Залишити заявку"))
+@dp.message_handler(Text(equals="Залишити заявку на майтсра"))
+async def request_for_ts(message: types.Message):
+    await message.answer(text="Введіть ваше ФІО та номер телефону та опишіть вашу проблему",
+                         reply_markup=ReplyKeyboardRemove())
+    await Request.first()
+
+
+@dp.message_handler(state=Request.Quest)
+async def tech_support_message(message: types.Message, state: FSMContext):
+    answer = message.text
+    async with state.proxy() as data:
+        data["Заявка"] = answer
+        for admin in ADMINS:
+            try:
+                await dp.bot.send_message(admin, f"Заявка на майста від клієнта: {data['Заявка']}")
+
+            except Exception as err:
+                logging.exception(err)
+    await state.reset_state()
+    await message.answer(text="Ваша заявка в опрацюванні, чекайте зв'язку\n"
+                              "Можете повернутись у головне меню по кнопці знизу", reply_markup=return_button)
+
+
+@dp.message_handler(Text(equals="Залишити заявку на підключення"))
 async def get_client(message: types.Message):
     await message.answer(text="Введдіть ваше ФІО та номер телефону, ми зв'яжемось з вами для обговорення вашого "
                               "підключення\n", reply_markup=ReplyKeyboardRemove())

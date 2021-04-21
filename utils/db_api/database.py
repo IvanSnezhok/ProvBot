@@ -15,12 +15,16 @@ async def search_query(tel):
     data.clear()
     try:
         result = result[0]
+        await cur.execute("SELECT name FROM `plans2` WHERE id=%s", result[5])
+        paket = await cur.fetchall()
+        paket = paket[0]
         data.append(result[0])
         data.append(result[1])
         data.append(result[2])
         data.append(result[3])
         data.append(result[4])
-        data.append(result[5])
+        data.append(paket[0])
+
     except IndexError:
         result = None
     await cur.close()

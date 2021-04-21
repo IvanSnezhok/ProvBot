@@ -10,7 +10,13 @@ tel_button = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
 request_button = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
     [
         KeyboardButton(text="Головне меню"),
-        KeyboardButton(text="Залишити заявку")
+        KeyboardButton(text="Залишити заявку на підключення")
+    ]
+], one_time_keyboard=True)
+
+client_request = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
+    [
+        KeyboardButton(text="Залишити заявку на майтсра")
     ]
 ], one_time_keyboard=True)
 

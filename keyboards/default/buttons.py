@@ -14,9 +14,16 @@ request_button = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
     ]
 ], one_time_keyboard=True)
 
+unknown_request_button = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
+    [
+        KeyboardButton(text="Залишити заявку на підключення")
+    ]
+])
+
 client_request = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
     [
-        KeyboardButton(text="Залишити заявку на майтсра")
+        KeyboardButton(text="Залишити заявку на виклик спеціаліста"),
+        KeyboardButton(text="Поповнити рахунок")
     ]
 ], one_time_keyboard=True)
 

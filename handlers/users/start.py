@@ -7,7 +7,7 @@ from aiogram.dispatcher.filters.builtin import CommandStart, Text
 from aiogram.types import CallbackQuery, ReplyKeyboardRemove
 
 from data.config import ADMINS
-from keyboards.default.buttons import tel_button, return_button, request_button, client_request
+from keyboards.default.buttons import tel_button, return_button, request_button, client_request, unknown_request_button
 from keyboards.inline.callback_datas import start_callback
 from keyboards.inline.start_keyboard import choice_lang
 from loader import dp, db
@@ -16,7 +16,7 @@ from utils.db_api import database
 from utils.format_number import format_number
 
 
-@dp.message_handler(Text(equals="Головне меню"))
+
 @dp.message_handler(CommandStart())
 async def bot_start(message: types.Message):
     await message.answer(text=f"Привіт, {message.from_user.full_name}!\n", reply_markup=ReplyKeyboardRemove())
@@ -74,15 +74,35 @@ async def ua_tel_get(message: types.Message):
         await message.answer(text=f"Ваш username: {database.data[0]}\n"
                                   f"На вашому рахунку: {database.data[1]}\n"
                                   f"Ваш номер договору: {database.data[2]}\n"
-                                  f"Ваше ФИО: {database.data[3]}\n"
+                                  f"Ваш ПІБ: {database.data[3]}\n"
                                   f"Стан послуги: {database.data[4]}\n"
                                   f"Ваш пакет: {database.data[5]}", reply_markup=client_request)
     else:
         await message.answer(text="Ви не зареєстровані у нашому білінгу\n"
                                   "Якщо ви хочете підключитися можете залишити заявку на підключення натиснувши "
-                                  "кнопку\n "
-                                  "Або можете повернутись у головне меню, для цього натисніть кнопку знизу",
-                             reply_markup=request_button)
+                                  "кнопку\n ",
+                             reply_markup=unknown_request_button)
+
+@dp.message_handler(Text(equals="Головне меню"))
+async def main_menu(message: types.Message):
+    tel = await db.select_tel(user_id=message.from_user.id)
+    await database.search_query(tel)
+    try:
+        await db.set_contract(database.data[2], message.from_user.id)
+    except IndexError:
+        pass
+    if len(database.data) > 0:
+        await message.answer(text=f"Ваш username: {database.data[0]}\n"
+                                  f"На вашому рахунку: {database.data[1]}\n"
+                                  f"Ваш номер договору: {database.data[2]}\n"
+                                  f"Ваш ПІБ: {database.data[3]}\n"
+                                  f"Стан послуги: {database.data[4]}\n"
+                                  f"Ваш пакет: {database.data[5]}", reply_markup=client_request)
+    else:
+        await message.answer(text="Ви не зареєстровані у нашому білінгу\n"
+                                  "Якщо ви хочете підключитися можете залишити заявку на підключення натиснувши "
+                                  "кнопку\n ",
+                             reply_markup=unknown_request_button)
 
 
 @dp.message_handler(Text(equals="Залишити заявку на майтсра"))

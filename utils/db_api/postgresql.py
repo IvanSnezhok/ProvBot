@@ -47,7 +47,8 @@ class Database:
         username VARCHAR(255) NULL,
         telegram_id BIGINT NOT NULL UNIQUE, 
         lang VARCHAR(5) NULL,
-        phone_number VARCHAR(255) NULL         
+        phone_number VARCHAR(255) NULL, 
+        contract VARCHAR(255) NULL      
         );
         """
         await self.execute(sql, execute=True)
@@ -73,6 +74,14 @@ class Database:
         sql, parameters = self.format_args(sql, parameters=kwargs)
         return await self.execute(sql, *parameters, fetchrow=True)
 
+    async def select_contract(self, user_id):
+        sql = "SELECT contract FROM users WHERE telegram_id=$1"
+        return await self.execute(sql, user_id, execute=True, fetch=True)
+
+    async def select_tel(self, user_id):
+        sql = "SELECT phone_number FROM users WHERE telegram_id=$1 "
+        return await self.execute(sql, user_id, execute=True, fetchval=True)
+
     async def count_users(self):
         sql = "SELECT COUNT(*) FROM Users"
         return await self.execute(sql, fetchval=True)
@@ -94,3 +103,7 @@ class Database:
     async def set_lang(self, lang, telegram_id):
         sql = "UPDATE users SET lang=$1 WHERE telegram_id=$2"
         await self.execute(sql, lang, telegram_id, execute=True)
+
+    async def set_contract(self, contract, telegram_id):
+        sql = "UPDATE users SET contract=$1 WHERE telegram_id=$2"
+        await self.execute(sql, contract, telegram_id, execute=True)

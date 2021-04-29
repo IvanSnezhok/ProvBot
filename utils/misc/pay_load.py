@@ -6,8 +6,8 @@ from aiogram.types import LabeledPrice
 from data import config
 
 
-@dataclass
-class Refill:
+@dataclass(frozen=True)
+class Pay:
     title: str
     description: str
     start_parameter: str
@@ -25,7 +25,6 @@ class Refill:
     send_phone_number_to_provider: bool = False
     send_email_to_provider: bool = False
     is_flexible: bool = False
-
     provider_token: str = config.PROVIDER_TOKEN
 
     def generate_invoice(self):

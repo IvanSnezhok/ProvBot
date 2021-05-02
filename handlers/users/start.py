@@ -110,7 +110,7 @@ async def tech_support_message(message: types.Message, state: FSMContext):
         data["Заявка"] = answer
         for admin in ADMINS:
             try:
-                await dp.bot.send_message(admin, f"Заявка на майстра від клієнта: {data['Заявка']}")
+                await dp.bot.send_message(admin, f"Завка на виклик майстра: {data['Заявка']}")
 
             except Exception as err:
                 logging.exception(err)

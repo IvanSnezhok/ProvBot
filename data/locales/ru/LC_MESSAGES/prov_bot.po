@@ -1,0 +1,137 @@
+# Russian translations for PROJECT.
+# Copyright (C) 2021 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2021-05-01 12:49+0300\n"
+"PO-Revision-Date: 2021-04-30 23:02+0300\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ru\n"
+"Language-Team: ru <LL@li.org>\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.9.0\n"
+
+#: handlers/users/pay_bill.py:19 handlers/users/pay_bill.py:25
+msgid "Зверніть увагу, що тут ви можете поповнити тільки свій особистий рахунок!"
+msgstr "Обратите внимание, что вы можете пополнить только свой личный счет!"
+
+#: handlers/users/pay_bill.py:22 handlers/users/pay_bill.py:29
+msgid ""
+"Діє акція - поповни рахунок на 6 місяців уперед та отримуй 10 % від суми "
+"поповнення!"
+msgstr ""
+"Действует акция - пополни счет на 6 месяцев вперед и получите 10 % от "
+"суммы пополнения!"
+
+#: handlers/users/pay_bill.py:33
+msgid "Вибачте, але для вашого тарифу не передбачено поповнення рахунку через бот"
+msgstr "Извините, но для вашего тарифа не предусмотрено пополнение счета в боте"
+
+#: handlers/users/pay_bill.py:52
+msgid "Користувач {} поповнив рахунок на {} {}"
+msgstr "Пользователь {} пополнил счет на {} {}"
+
+#: handlers/users/start.py:22
+msgid "Привіт, {}!\n"
+msgstr "Здравствуйте, {}!\n"
+
+#: handlers/users/start.py:33
+msgid "Оберіть зручну для вас мову!"
+msgstr "Выберите удобный для вас язык!"
+
+#: handlers/users/start.py:48
+msgid ""
+"Ви обрали {}\n"
+" Тепер відпрате, будь ласка, свій контакт, щоб знайти вас у нашому білінгу"
+msgstr ""
+"Вы выбрали {}\n"
+"Теперь пожалуйста, отправьте ваш контакт чтобы найти вас в билинге"
+
+#: handlers/users/start.py:51
+msgid "Кнопка для цього знизу"
+msgstr "Кнопка для этого снизу"
+
+#: handlers/users/start.py:62 handlers/users/start.py:86
+msgid ""
+"Ваш username: {}\n"
+"На вашому рахунку: {}\n"
+"Ваш номер договору: {}\n"
+"Ваше ПІБ: {}\n"
+"Стан послуги: {}\n"
+"Ваш пакет: {}"
+msgstr ""
+"Ваш username: {}\n"
+"На вашем счету: {}\n"
+"Ваш номер договора: {}\n"
+"Ваше ФИО: {}\n"
+"Состояние услуги: {}\n"
+"Ваш пакет: {}\n"
+
+#: handlers/users/start.py:71 handlers/users/start.py:95
+msgid ""
+"Ви не зареєстровані у нашому білінгу\n"
+"Якщо ви хочете підключитися можете залишити заявку на підключення "
+"натиснувши кнопку\n"
+" "
+msgstr ""
+"Ви не зарегестрированы в нашем билинге\n"
+"Если вы хотите подключиться оставте заявку на подключение нажатием кнопки"
+"\n"
+
+#: handlers/users/start.py:103
+msgid "Введіть ваше ПІБ, номер телефону та опишіть вашу проблему"
+msgstr "Введите ваше ФИО, номер телефона и опишите вашу проблему"
+
+#: handlers/users/start.py:120 handlers/users/start.py:144
+msgid ""
+"Ваша заявка в опрацюванні, чекайте зв'язку\n"
+"Можете повернутись у головне меню скориставшись кнопці знизу"
+msgstr ""
+"Ваша заявка в обработке, мы с вами свяжемся\n"
+"Моежете вернуться в главное меню по кнопке снизу"
+
+#: handlers/users/start.py:127
+msgid ""
+"Введдіть ваше ПІБ та номер телефону, ми зв'яжемось з вами для обговорення"
+" вашого підключення\n"
+msgstr ""
+"Введите ваше ФИО и номер телефона, ми с вами свяжемся чтобы обсудить ваше"
+" подключение\n"
+
+#: handlers/users/start.py:151
+msgid "Оберіть мову"
+msgstr "Выберете язык"
+
+#: handlers/users/start.py:162
+msgid ""
+"Ви обрали {}\n"
+" Тепер можете перейти у головне меню"
+msgstr ""
+"Вы выбрали {}\n"
+" Теперь можете перейти в главное меню"
+
+msgid "Поповнити рахунок"
+msgstr "Пополнить счет"
+
+msgid "Ваш рахунок поповнено на {} {}!"
+msgstr "Ваш счет пополнен на {} {}!"
+
+msgid "Головне меню"
+msgstr "Главное меню"
+
+msgid "Залишити заявку на виклик спеціаліста"
+msgstr "Оставить заявку на подключение"
+
+msgid "Залишити заявку на підключення"
+msgstr "Оставить заявку на подключение"
+
+msgid "Змінити мову"
+msgstr "Сменить язык"

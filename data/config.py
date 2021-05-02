@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from environs import Env
 
 # Теперь используем вместо библиотеки python-dotenv библиотеку environs
@@ -14,3 +16,7 @@ DB_NAME = env.str("DB_NAME")
 DB_HOST = env.str("DB_HOST")
 
 PROVIDER_TOKEN = env.str("PROVIDER_TOKEN")
+
+I18N_DOMAIN = "prov_bot"
+BASE_DIR = Path(__file__).parent
+LOCALES_DIR = BASE_DIR/'locales'

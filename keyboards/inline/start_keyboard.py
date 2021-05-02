@@ -10,8 +10,8 @@ choice_lang = InlineKeyboardMarkup(row_width=3,
                                                callback_data=start_callback.new("UA")
                                            ),
                                            InlineKeyboardButton(
-                                               text="🇺🇸 ENG",
-                                               callback_data=start_callback.new("ENG")
+                                               text="🇺🇸 EN",
+                                               callback_data=start_callback.new("EN")
                                            ),
                                            InlineKeyboardButton(
                                                text="🇷🇺 RU",

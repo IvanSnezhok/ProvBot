@@ -13,6 +13,8 @@ async def on_startup(dispatcher):
     await db.create()
     logging.info("Создаем таблицу пользователей")
     await db.create_table_users()
+    logging.info("Создаем таблицу сообщений")
+    await db.create_table_msg()
     logging.info("Готово.")
     await on_startup_notify(dispatcher)
 

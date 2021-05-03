@@ -14,6 +14,7 @@ from middlewares import _, __
 
 @dp.message_handler(Text(__("Поповнити рахунок")))
 async def contract_pay(message: types.Message):
+    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
     await database.search_query(tel=await db.select_tel(user_id=message.from_user.id))
     if database.data[5] == '150.':
         await message.answer(text=_("Зверніть увагу, що тут ви можете поповнити тільки свій особистий рахунок!"))
@@ -42,6 +43,7 @@ async def process_pre_checkout(query: types.PreCheckoutQuery):
 
 @dp.message_handler(content_types=ContentType.SUCCESSFUL_PAYMENT)
 async def process_successful_pay(message: types.Message):
+    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
     contract = await db.select_contract(message.from_user.id)
     contract = contract[0]
     payload = message.successful_payment.total_amount // 100

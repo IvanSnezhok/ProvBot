@@ -19,6 +19,7 @@ from middlewares import _, __
 
 @dp.message_handler(CommandStart())
 async def bot_start(message: types.Message):
+    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
     await message.answer(text=_("Привіт, {}!\n").format(message.from_user.full_name),
                          reply_markup=ReplyKeyboardRemove())
     try:
@@ -51,6 +52,7 @@ async def lang_reply(call: CallbackQuery, callback_data: dict):
 
 @dp.message_handler(content_types=types.ContentType.CONTACT)
 async def ua_tel_get(message: types.Message):
+    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
     tel = message.contact.phone_number
     tel = format_number(tel)
     await db.update_phone_number(tel, message.from_user.id)
@@ -74,6 +76,7 @@ async def ua_tel_get(message: types.Message):
 
 @dp.message_handler(Text(equals=["Головне меню", "Главное меню", "Main menu"]))
 async def main_menu(message: types.Message):
+    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
     tel = await db.select_tel(user_id=message.from_user.id)
     await database.search_query(tel)
     try:
@@ -98,6 +101,7 @@ async def main_menu(message: types.Message):
 
 @dp.message_handler(Text(equals=__("Залишити заявку на виклик спеціаліста")))
 async def request_for_ts(message: types.Message):
+    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
     await message.answer(text=_("Введіть ваше ПІБ, номер телефону та опишіть вашу проблему"),
                          reply_markup=ReplyKeyboardRemove())
     await Request.first()
@@ -105,6 +109,7 @@ async def request_for_ts(message: types.Message):
 
 @dp.message_handler(state=Request.Quest)
 async def tech_support_message(message: types.Message, state: FSMContext):
+    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
     answer = message.text
     async with state.proxy() as data:
         data["Заявка"] = answer
@@ -122,6 +127,7 @@ async def tech_support_message(message: types.Message, state: FSMContext):
 
 @dp.message_handler(Text(equals=__("Залишити заявку на підключення")))
 async def get_client(message: types.Message):
+    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
     await message.answer(text=_("Введдіть ваше ПІБ та номер телефону, ми зв'яжемось з вами для обговорення вашого "
                                 "підключення\n"), reply_markup=ReplyKeyboardRemove())
     await Client.first()
@@ -129,6 +135,7 @@ async def get_client(message: types.Message):
 
 @dp.message_handler(state=Client.Quest)
 async def request_client(message: types.Message, state: FSMContext):
+    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
     answer = message.text
     async with state.proxy() as data:
         data["Заявка"] = answer

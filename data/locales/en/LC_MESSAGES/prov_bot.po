@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-05-01 12:49+0300\n"
+"POT-Creation-Date: 2021-05-03 13:37+0300\n"
 "PO-Revision-Date: 2021-04-30 23:01+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -18,35 +18,51 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.9.0\n"
 
-#: handlers/users/pay_bill.py:19 handlers/users/pay_bill.py:25
+#: handlers/users/echo.py:13
+msgid "Для взаємодії з ботом вам потрібно натиснути кнопку"
+msgstr "To interact with the bot, you need to press the button"
+
+#: handlers/users/lang_change.py:14
+msgid "Оберіть мову"
+msgstr "Select a language"
+
+#: handlers/users/lang_change.py:42
+msgid ""
+"Ви обрали {}\n"
+" Тепер можете перейти у головне меню"
+msgstr ""
+"You have chosen {}\n"
+"Now you can go to the main menu"
+
+#: handlers/users/pay_bill.py:20 handlers/users/pay_bill.py:26
 msgid "Зверніть увагу, що тут ви можете поповнити тільки свій особистий рахунок!"
 msgstr "Please note that you can only top up your personal account!"
 
-#: handlers/users/pay_bill.py:22 handlers/users/pay_bill.py:29
+#: handlers/users/pay_bill.py:23 handlers/users/pay_bill.py:30
 msgid ""
 "Діє акція - поповни рахунок на 6 місяців уперед та отримуй 10 % від суми "
 "поповнення!"
 msgstr ""
 
-#: handlers/users/pay_bill.py:33
+#: handlers/users/pay_bill.py:34
 msgid "Вибачте, але для вашого тарифу не передбачено поповнення рахунку через бот"
 msgstr ""
 "There is a special offer, replenish your account 6 months in advance and "
 "get 10% of the replenishment amount!"
 
-#: handlers/users/pay_bill.py:52
+#: handlers/users/pay_bill.py:54
 msgid "Користувач {} поповнив рахунок на {} {}"
 msgstr "User {} has deposited an account on {} {}"
 
-#: handlers/users/start.py:22
+#: handlers/users/start.py:23
 msgid "Привіт, {}!\n"
 msgstr "Hello, {}!\n"
 
-#: handlers/users/start.py:33
+#: handlers/users/start.py:34
 msgid "Оберіть зручну для вас мову!"
 msgstr "Choose a language that is convenient for you!"
 
-#: handlers/users/start.py:48
+#: handlers/users/start.py:47
 msgid ""
 "Ви обрали {}\n"
 " Тепер відпрате, будь ласка, свій контакт, щоб знайти вас у нашому білінгу"
@@ -54,11 +70,11 @@ msgstr ""
 "You choose {}\n"
 "Now please send your contact to find you in billing"
 
-#: handlers/users/start.py:51
+#: handlers/users/start.py:50
 msgid "Кнопка для цього знизу"
 msgstr "Button for this at the bottom"
 
-#: handlers/users/start.py:62 handlers/users/start.py:86
+#: handlers/users/start.py:62 handlers/users/start.py:87
 msgid ""
 "Ваш username: {}\n"
 "На вашому рахунку: {}\n"
@@ -74,7 +90,7 @@ msgstr ""
 "Service status: {} \n"
 "Your package: {}"
 
-#: handlers/users/start.py:71 handlers/users/start.py:95
+#: handlers/users/start.py:71 handlers/users/start.py:96
 msgid ""
 "Ви не зареєстровані у нашому білінгу\n"
 "Якщо ви хочете підключитися можете залишити заявку на підключення "
@@ -86,11 +102,11 @@ msgstr ""
 "button\n"
 " "
 
-#: handlers/users/start.py:103
+#: handlers/users/start.py:105
 msgid "Введіть ваше ПІБ, номер телефону та опишіть вашу проблему"
 msgstr "Enter your full name, phone number and describe your problem"
 
-#: handlers/users/start.py:120 handlers/users/start.py:144
+#: handlers/users/start.py:123 handlers/users/start.py:149
 msgid ""
 "Ваша заявка в опрацюванні, чекайте зв'язку\n"
 "Можете повернутись у головне меню скориставшись кнопці знизу"
@@ -98,25 +114,13 @@ msgstr ""
 "Your application is being processed, we will contact you \n"
 "You can return to the main menu by clicking the button below"
 
-#: handlers/users/start.py:127
+#: handlers/users/start.py:131
 msgid ""
 "Введдіть ваше ПІБ та номер телефону, ми зв'яжемось з вами для обговорення"
 " вашого підключення\n"
 msgstr ""
 "Enter your full name and phone number, we will contact you to discuss "
 "your connection \n"
-
-#: handlers/users/start.py:151
-msgid "Оберіть мову"
-msgstr "Select a language"
-
-#: handlers/users/start.py:162
-msgid ""
-"Ви обрали {}\n"
-" Тепер можете перейти у головне меню"
-msgstr ""
-"You have chosen {}\n"
-"Now you can go to the main menu"
 
 msgid "Поповнити рахунок"
 msgstr "Top up account"

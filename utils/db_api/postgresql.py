@@ -53,6 +53,18 @@ class Database:
         """
         await self.execute(sql, execute=True)
 
+    async def create_table_msg(self):
+        sql = """
+        CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        full_name VARCHAR(255) NOT NULL,
+        telegram_id BIGINT NOT NULL,
+        date DATE NOT NULL ,
+        message VARCHAR(255) NULL
+        ); 
+        """
+        await self.execute(sql, execute=True)
+
     @staticmethod
     def format_args(sql, parameters: dict):
         sql += " AND ".join([
@@ -64,6 +76,10 @@ class Database:
     async def add_user(self, full_name, username, telegram_id):
         sql = "INSERT INTO users (full_name, username, telegram_id) VALUES($1, $2, $3) returning *"
         return await self.execute(sql, full_name, username, telegram_id, fetchrow=True)
+
+    async def message(self, full_name, telegram_id, message, date):
+        sql = "INSERT INTO messages (full_name, telegram_id, message, data) VALUES ($1, $2, $3, $4)"
+        return await self.execute(sql,full_name, telegram_id, message, date, execute=True)
 
     async def select_all_users(self):
         sql = "SELECT * FROM Users"

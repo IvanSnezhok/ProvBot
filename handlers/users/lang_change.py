@@ -11,7 +11,8 @@ from keyboards.default.buttons import lang_change
 @dp.message_handler(Text(equals=__("Змінити мову")))
 async def change_lang(message: types.Message):
     await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
-    await message.answer(text=_("Оберіть мову"), reply_markup=lang_change)
+    msg = await message.answer(text=_("Оберіть мову"), reply_markup=lang_change)
+    await db.message("BOT", 10001, msg.html_text, msg.date)
 
 
 @dp.message_handler(Text(equals=["🇷🇺 RU", "🇺🇸 EN", "🇺🇦 UA"]))
@@ -37,7 +38,8 @@ async def changed_lang(message: types.Message):
             ]
         ], one_time_keyboard=True)
 
-    await message.answer(
+    msg = await message.answer(
         text=_("Ви обрали {}\n Тепер можете перейти у головне меню",
                locale=message.text[3:].lower()).format(message.text[3:]),
         reply_markup=return_button)
+    await db.message("BOT", 10001, msg.html_text, msg.date)

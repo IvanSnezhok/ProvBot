@@ -1,4 +1,5 @@
 import logging
+import datetime
 
 import asyncpg
 from aiogram import types
@@ -37,17 +38,19 @@ async def bot_start(message: types.Message):
 
 
 @dp.callback_query_handler(start_callback.filter(lang=["RU", "UA", "EN"]))
-async def lang_reply(call: CallbackQuery, callback_data: dict):
+async def lang_reply(call: CallbackQuery):
+    await db.message(call.from_user.full_name, call.from_user.id, call.message.text, call.message.date)
     await db.set_lang(call.data[7:].lower(), call.from_user.id)
     await call.answer()
-    logging.info(f"callback_data = {call.data}")
-    logging.info(f"callback_data = {callback_data}")
-    await call.message.edit_text(
+    msg = await call.message.edit_text(
         text=_("Ви обрали {}\n Тепер відпрате, будь ласка, свій контакт, щоб знайти вас у нашому білінгу",
                locale=call.data[7:].lower()).format(
             call.data[7:])
     )
-    await call.message.answer(text=_("Кнопка для цього знизу", locale=call.data[7:].lower()), reply_markup=tel_button)
+    await db.message("BOT", 10001, msg.html_text, msg.date)
+    msg1 = await call.message.answer(text=_("Кнопка для цього знизу", locale=call.data[7:].lower()),
+                                     reply_markup=tel_button)
+    await db.message("BOT", 10001, msg1.html_text, msg1.date)
 
 
 @dp.message_handler(content_types=types.ContentType.CONTACT)
@@ -57,21 +60,23 @@ async def ua_tel_get(message: types.Message):
     tel = format_number(tel)
     await db.update_phone_number(tel, message.from_user.id)
     await database.search_query(tel)
-    logging.info(database.data)   # вывод результата поиска
     if len(database.data) > 0:
-        await message.answer(text=_("Ваш username: {}\n"
-                                    "На вашому рахунку: {}\n"
-                                    "Ваш номер договору: {}\n"
-                                    "Ваше ПІБ: {}\n"
-                                    "Стан послуги: {}\n"
-                                    "Ваш пакет: {}").format(
+        msg = await message.answer(text=_("Ваш username: {}\n"
+                                          "На вашому рахунку: {}\n"
+                                          "Ваш номер договору: {}\n"
+                                          "Ваше ПІБ: {}\n"
+                                          "Стан послуги: {}\n"
+                                          "Ваш пакет: {}").format(
             database.data[0], database.data[1], database.data[2], database.data[3], database.data[4], database.data[5]),
             reply_markup=client_request)
+        await db.message("BOT", 10001, msg.html_text, msg.date)
     else:
-        await message.answer(text=_("Ви не зареєстровані у нашому білінгу\n"
-                                    "Якщо ви хочете підключитися можете залишити заявку на підключення натиснувши "
-                                    "кнопку\n "),
-                             reply_markup=unknown_request_button)
+        msg = await message.answer(
+            text=_("Ви не зареєстровані у нашому білінгу\n"
+                   "Якщо ви хочете підключитися можете залишити заявку на підключення натиснувши "
+                   "кнопку\n "),
+            reply_markup=unknown_request_button)
+        await db.message("BOT", 10001, msg.html_text, msg.date)
 
 
 @dp.message_handler(Text(equals=["Головне меню", "Главное меню", "Main menu"]))
@@ -84,26 +89,30 @@ async def main_menu(message: types.Message):
     except IndexError:
         pass
     if len(database.data) > 0:
-        await message.answer(text=_("Ваш username: {}\n"
-                                    "На вашому рахунку: {}\n"
-                                    "Ваш номер договору: {}\n"
-                                    "Ваше ПІБ: {}\n"
-                                    "Стан послуги: {}\n"
-                                    "Ваш пакет: {}").format(
+        msg = await message.answer(text=_("Ваш username: {}\n"
+                                          "На вашому рахунку: {}\n"
+                                          "Ваш номер договору: {}\n"
+                                          "Ваше ПІБ: {}\n"
+                                          "Стан послуги: {}\n"
+                                          "Ваш пакет: {}").format(
             database.data[0], database.data[1], database.data[2], database.data[3], database.data[4], database.data[5]),
             reply_markup=client_request)
+        await db.message("BOT", 10001, msg.html_text, msg.date)
     else:
-        await message.answer(text=_("Ви не зареєстровані у нашому білінгу\n"
-                                    "Якщо ви хочете підключитися можете залишити заявку на підключення натиснувши "
-                                    "кнопку\n "),
-                             reply_markup=unknown_request_button,)
+        msg1 = await message.answer(
+            text=_("Ви не зареєстровані у нашому білінгу\n"
+                   "Якщо ви хочете підключитися можете залишити заявку на підключення натиснувши "
+                   "кнопку\n "),
+            reply_markup=unknown_request_button,)
+        await db.message("BOT", 10001, msg1.html_text, msg1.date)
 
 
 @dp.message_handler(Text(equals=__("Залишити заявку на виклик спеціаліста")))
 async def request_for_ts(message: types.Message):
     await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
-    await message.answer(text=_("Введіть ваше ПІБ, номер телефону та опишіть вашу проблему"),
-                         reply_markup=ReplyKeyboardRemove())
+    msg = await message.answer(text=_("Введіть ваше ПІБ, номер телефону та опишіть вашу проблему"),
+                               reply_markup=ReplyKeyboardRemove())
+    await db.message("BOT", 10001, msg.html_text, msg.date)
     await Request.first()
 
 
@@ -115,21 +124,25 @@ async def tech_support_message(message: types.Message, state: FSMContext):
         data["Заявка"] = answer
         for admin in ADMINS:
             try:
-                await dp.bot.send_message(admin, f"Завка на виклик майстра: {data['Заявка']}")
+                msg = await dp.bot.send_message(admin, f"Завка на виклик майстра: {data['Заявка']}")
+                await db.message("BOT", 10001, msg.html_text, msg.date)
 
             except Exception as err:
                 logging.exception(err)
     await state.reset_state()
-    await message.answer(text=_("Ваша заявка в опрацюванні, чекайте зв'язку\n"
-                                "Можете повернутись у головне меню скориставшись кнопці знизу"),
-                         reply_markup=return_button)
+    msg = await message.answer(text=_("Ваша заявка в опрацюванні, чекайте зв'язку\n"
+                                      "Можете повернутись у головне меню скориставшись кнопці знизу"),
+                               reply_markup=return_button)
+    await db.message("BOT", 10001, msg.html_text, msg.date)
 
 
 @dp.message_handler(Text(equals=__("Залишити заявку на підключення")))
 async def get_client(message: types.Message):
     await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
-    await message.answer(text=_("Введдіть ваше ПІБ та номер телефону, ми зв'яжемось з вами для обговорення вашого "
-                                "підключення\n"), reply_markup=ReplyKeyboardRemove())
+    msg = await message.answer(
+        text=_("Введдіть ваше ПІБ та номер телефону, ми зв'яжемось з вами для обговорення вашого "
+               "підключення\n"), reply_markup=ReplyKeyboardRemove())
+    await db.message("BOT", 10001, msg.html_text, msg.date)
     await Client.first()
 
 
@@ -141,12 +154,13 @@ async def request_client(message: types.Message, state: FSMContext):
         data["Заявка"] = answer
         for admin in ADMINS:
             try:
-                await dp.bot.send_message(admin, f"Заявка на подключение: {data['Заявка']}")
+                msg = await dp.bot.send_message(admin, f"Заявка на подключение: {data['Заявка']}")
+                await db.message("BOT", 10001, msg.html_text, msg.date)
 
             except Exception as err:
                 logging.exception(err)
     await state.reset_state()
-    await message.answer(text=_("Ваша заявка в опрацюванні, чекайте зв'язку\n"
-                                "Можете повернутись у головне меню скориставшись кнопці знизу"),
-                         reply_markup=return_button)
-
+    msg = await message.answer(text=_("Ваша заявка в опрацюванні, чекайте зв'язку\n"
+                                      "Можете повернутись у головне меню скориставшись кнопці знизу"),
+                               reply_markup=return_button)
+    await db.message("BOT", 10001, msg.html_text, msg.date)

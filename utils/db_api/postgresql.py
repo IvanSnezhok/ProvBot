@@ -59,7 +59,7 @@ class Database:
         id SERIAL PRIMARY KEY,
         full_name VARCHAR(255) NOT NULL,
         telegram_id BIGINT NOT NULL,
-        date DATE NOT NULL ,
+        date TIMESTAMP NOT NULL,
         message VARCHAR(255) NULL
         ); 
         """
@@ -78,8 +78,8 @@ class Database:
         return await self.execute(sql, full_name, username, telegram_id, fetchrow=True)
 
     async def message(self, full_name, telegram_id, message, date):
-        sql = "INSERT INTO messages (full_name, telegram_id, message, data) VALUES ($1, $2, $3, $4)"
-        return await self.execute(sql,full_name, telegram_id, message, date, execute=True)
+        sql = "INSERT INTO messages (full_name, telegram_id, message, date) VALUES ($1, $2, $3, $4)"
+        return await self.execute(sql, full_name, telegram_id, message, date, execute=True)
 
     async def select_all_users(self):
         sql = "SELECT * FROM Users"

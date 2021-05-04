@@ -45,15 +45,9 @@ async def pay_balance_150(contract):
     conn.close()
 
 
-async def pay_balance(contract, payload):
+async def pause_inet(contract):
     conn = await aiomysql.connect(host="localhost", port=3306,
                                   user="root", password="password",
                                   db="bill", loop=loop)
     cur = await conn.cursor()
-    execute = payload, contract
-    await cur.execute("UPDATE users set balance = balance + %s WHERE contract=%s", execute)
-    await cur.close()
-    conn.close()
-
-
-print(plan)
+    await cur.execute("")

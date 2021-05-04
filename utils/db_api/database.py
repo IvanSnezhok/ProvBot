@@ -9,7 +9,7 @@ plan = []
 
 async def search_query(tel):
     conn = await aiomysql.connect(host="localhost", port=3306,
-                                  user="root", password="password",
+                                  user="MySQL", password="M,srHEkK38VB)}5e",
                                   db="bill", loop=loop)
     cur = await conn.cursor()
     await cur.execute("SELECT name, balance, contract, fio, state, paket FROM `users` WHERE telefon=%s", tel)
@@ -37,7 +37,7 @@ async def search_query(tel):
 
 async def pay_balance_150(contract):
     conn = await aiomysql.connect(host="localhost", port=3306,
-                                  user="root", password="password",
+                                  user="MySQL", password="M,srHEkK38VB)}5e",
                                   db="bill", loop=loop)
     cur = await conn.cursor()
     await cur.execute("UPDATE users set balance = balance + 150 WHERE contract=%s", contract)
@@ -45,9 +45,28 @@ async def pay_balance_150(contract):
     conn.close()
 
 
-async def pause_inet(contract):
+async def pay_balance(contract, payload):
     conn = await aiomysql.connect(host="localhost", port=3306,
                                   user="root", password="password",
                                   db="bill", loop=loop)
     cur = await conn.cursor()
-    await cur.execute("")
+    execute = payload, contract
+    await cur.execute("UPDATE users set balance = balance + %s WHERE contract=%s", execute)
+    await cur.close()
+    conn.close()
+
+
+async def pause_inet(contract):
+    conn = await aiomysql.connect(host="localhost", port=3306,
+                                  user="MySQL", password="M,srHEkK38VB)}5e",
+                                  db="bill", loop=loop)
+    cur = await conn.cursor()
+    await cur.execute("SELECT paket FROM `users` WHERE contract=%s", contract)
+    paket = await cur.fetchall()
+    paket = paket[0]
+    await cur.execute("SELECT price FROM `plans2` WHERE id=%s", paket)
+    price = await cur.fetchall()
+    price = price[0]
+
+    # await cur.execute(f"INSERT INTO `netpause` VALUES ")
+

@@ -43,12 +43,13 @@ msgid ""
 "Діє акція - поповни рахунок на 6 місяців уперед та отримуй 10 % від суми "
 "поповнення!"
 msgstr ""
+"There is a special offer, replenish your account 6 months in advance and "
+"get 10% of the replenishment amount!"
 
 #: handlers/users/pay_bill.py:34
 msgid "Вибачте, але для вашого тарифу не передбачено поповнення рахунку через бот"
 msgstr ""
-"There is a special offer, replenish your account 6 months in advance and "
-"get 10% of the replenishment amount!"
+"Sorry, but your tariff does not include a top-up via bot"
 
 #: handlers/users/pay_bill.py:54
 msgid "Користувач {} поповнив рахунок на {} {}"

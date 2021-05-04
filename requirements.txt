@@ -1,4 +1,7 @@
-aiogram~=2.13
-environs~=8.0.0
+aiogram
+environs
 aiomysql
+asyncpg
+pybabel
+asyncio
 asyncpg

@@ -8,8 +8,8 @@ from data.config import ADMINS
 from data.pays_item import P150, P900, P200, P1200
 from keyboards.default.buttons import return_button
 from loader import dp, db, bot
-from utils.db_api import database
 from middlewares import _, __
+from utils.db_api import database
 
 
 @dp.message_handler(Text(__("Поповнити рахунок")))

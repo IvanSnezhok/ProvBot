@@ -1,6 +1,6 @@
-
-from middlewares import _, __
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+
+from middlewares import __
 
 tel_button = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
     [
@@ -25,9 +25,12 @@ unknown_request_button = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
 
 client_request = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
     [
-        KeyboardButton(text=__("Залишити заявку на виклик спеціаліста")),
+        KeyboardButton(text=__("Тимчасовий платіж")),
         KeyboardButton(text=__("Поповнити рахунок")),
         KeyboardButton(text=__("Змінити мову"))
+    ],
+    [
+        KeyboardButton(text=__("Залишити заявку на виклик спеціаліста"))
     ]
 ], one_time_keyboard=True)
 
@@ -43,5 +46,11 @@ lang_change = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
         KeyboardButton(text="🇺🇸 EN"),
         KeyboardButton(text="🇷🇺 RU")
 
+    ]
+], one_time_keyboard=True)
+
+time_pay = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
+    [
+        KeyboardButton(text=__("Тимчасовий платіж"))
     ]
 ], one_time_keyboard=True)

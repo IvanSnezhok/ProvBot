@@ -1,5 +1,4 @@
 import logging
-import datetime
 
 import asyncpg
 from aiogram import types
@@ -8,14 +7,14 @@ from aiogram.dispatcher.filters.builtin import CommandStart, Text
 from aiogram.types import CallbackQuery, ReplyKeyboardRemove
 
 from data.config import ADMINS
-from keyboards.default.buttons import tel_button, return_button, client_request, unknown_request_button, lang_change
+from keyboards.default.buttons import tel_button, return_button, client_request, unknown_request_button
 from keyboards.inline.callback_datas import start_callback
 from keyboards.inline.start_keyboard import choice_lang
 from loader import dp, db
+from middlewares import _, __
 from states.get_client import Client, Request
 from utils.db_api import database
 from utils.format_number import format_number
-from middlewares import _, __
 
 
 @dp.message_handler(CommandStart())
@@ -103,7 +102,7 @@ async def main_menu(message: types.Message):
             text=_("Ви не зареєстровані у нашому білінгу\n"
                    "Якщо ви хочете підключитися можете залишити заявку на підключення натиснувши "
                    "кнопку\n "),
-            reply_markup=unknown_request_button,)
+            reply_markup=unknown_request_button, )
         await db.message("BOT", 10001, msg1.html_text, msg1.date)
 
 

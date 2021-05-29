@@ -4,6 +4,8 @@ import time
 
 import aiomysql
 
+from data import config
+
 loop = asyncio.get_event_loop()
 data = []
 plan = []
@@ -11,18 +13,18 @@ time_pay = []
 
 
 async def search_query(tel):
-    conn = await aiomysql.connect(host="localhost", port=3306,
-                                  user="MySQL", password="M,srHEkK38VB)}5e",
-                                  db="bill", loop=loop)
+    conn = await aiomysql.connect(host=config.BILL_HOST, port=int(config.BILL_PORT),
+                                  user=config.BILL_USER, password=config.BILL_PASS,
+                                  db=config.BILL_NAME, loop=loop)
     cur = await conn.cursor()
-    await cur.execute("SELECT name, balance, contract, fio, state, paket FROM `users` WHERE telefon=%s", tel)
+    await cur.execute(f'SELECT name, balance, contract, fio, state, paket FROM `users` WHERE telefon="{tel}"')
     result = await cur.fetchall()
     data.clear()
     plan.clear()
     try:
         result = result[0]
         plan.append(result[5])
-        await cur.execute("SELECT name FROM `plans2` WHERE id=%s", result[5])
+        await cur.execute('SELECT name FROM `plans2` WHERE id=%s', result[5])
         paket = await cur.fetchall()
         paket = paket[0]
         data.append(result[0])
@@ -39,22 +41,22 @@ async def search_query(tel):
 
 
 async def pay_balance_150(contract):
-    conn = await aiomysql.connect(host="localhost", port=3306,
-                                  user="MySQL", password="M,srHEkK38VB)}5e",
-                                  db="bill", loop=loop)
+    conn = await aiomysql.connect(host=config.BILL_HOST, port=int(config.BILL_PORT),
+                                  user=config.BILL_USER, password=config.BILL_PASS,
+                                  db=config.BILL_NAME, loop=loop)
     cur = await conn.cursor()
-    await cur.execute("UPDATE users set balance = balance + 150 WHERE contract=%s", contract)
+    await cur.execute(f"UPDATE users set balance = balance + 150 WHERE contract={contract}")
     await cur.close()
     conn.close()
 
 
 async def pay_balance(contract, payload):
-    conn = await aiomysql.connect(host="localhost", port=3306,
-                                  user="root", password="password",
-                                  db="bill", loop=loop)
+    conn = await aiomysql.connect(host=config.BILL_HOST, port=int(config.BILL_PORT),
+                                  user=config.BILL_USER, password=config.BILL_PASS,
+                                  db=config.BILL_NAME, loop=loop)
     cur = await conn.cursor()
     execute = payload, contract
-    await cur.execute("UPDATE users set balance = balance + %s WHERE contract=%s", execute)
+    await cur.execute(f"UPDATE users set balance = balance + {payload} WHERE contract={contract}")
     await cur.close()
     conn.close()
 
@@ -66,9 +68,9 @@ async def t_pay(contract):  # Временный плтажеж
     now_t = time.ctime(now_time)
     next_t = time.time() + 86400
 
-    conn = await aiomysql.connect(host="localhost", port=3306,  # подключение к бд
-                                  user="MySQL", password="M,srHEkK38VB)}5e",
-                                  db="bill", loop=loop)
+    conn = await aiomysql.connect(host=config.BILL_HOST, port=int(config.BILL_PORT),
+                                  user=config.BILL_USER, password=config.BILL_PASS,
+                                  db=config.BILL_NAME, loop=loop)
     cur = await conn.cursor()
     await cur.execute(
         f"SELECT t_pay, paket, srvs, contract, fio, telefon, start_day, balance, id FROM users WHERE contract={contract}")
@@ -91,7 +93,7 @@ async def t_pay(contract):  # Временный плтажеж
 
     if time_pay == 0:
         if paket:
-            await cur.execute("""SELECT price FROM plans2 WHERE id = %s""", paket)
+            await cur.execute(f"SELECT price FROM plans2 WHERE id = {paket}")
         price = await cur.fetchall()
         try:
             price = price[0]

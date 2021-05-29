@@ -20,3 +20,9 @@ PROVIDER_TOKEN = env.str("PROVIDER_TOKEN")
 I18N_DOMAIN = "prov_bot"
 BASE_DIR = Path(__file__).parent
 LOCALES_DIR = BASE_DIR/'locales'
+
+BILL_USER = env.str("BILL_USER")
+BILL_PASS = env.str("BILL_PASS")
+BILL_NAME = env.str("BILL_NAME")
+BILL_HOST = env.str("BILL_HOST")
+BILL_PORT = env.str("BILL_PORT")

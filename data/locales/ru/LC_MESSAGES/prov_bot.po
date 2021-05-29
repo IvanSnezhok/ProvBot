@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-05-03 13:37+0300\n"
+"POT-Creation-Date: 2021-05-28 16:24+0300\n"
 "PO-Revision-Date: 2021-04-30 23:02+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru\n"
@@ -17,9 +17,9 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.9.0\n"
+"Generated-By: Babel 2.9.1\n"
 
-#: handlers/users/echo.py:13
+#: handlers/users/echo.py:15
 msgid "Для взаємодії з ботом вам потрібно натиснути кнопку"
 msgstr "Для взаимодействия с ботом вам нужно нажать кнопку"
 
@@ -27,19 +27,20 @@ msgstr "Для взаимодействия с ботом вам нужно на
 msgid "Оберіть мову"
 msgstr "Выберете язык"
 
-#: handlers/users/lang_change.py:42
+#: handlers/users/lang_change.py:43
+#, fuzzy
 msgid ""
 "Ви обрали {}\n"
 " Тепер можете перейти у головне меню"
 msgstr ""
 "Вы выбрали {}\n"
-" Теперь можете перейти в главное меню"
+"Теперь можете перейти в главное меню"
 
-#: handlers/users/pay_bill.py:20 handlers/users/pay_bill.py:26
+#: handlers/users/pay_bill.py:20 handlers/users/pay_bill.py:28
 msgid "Зверніть увагу, що тут ви можете поповнити тільки свій особистий рахунок!"
 msgstr "Обратите внимание, что вы можете пополнить только свой личный счет!"
 
-#: handlers/users/pay_bill.py:23 handlers/users/pay_bill.py:30
+#: handlers/users/pay_bill.py:24 handlers/users/pay_bill.py:33
 msgid ""
 "Діє акція - поповни рахунок на 6 місяців уперед та отримуй 10 % від суми "
 "поповнення!"
@@ -47,11 +48,11 @@ msgstr ""
 "Действует акция - пополни счет на 6 месяцев вперед и получите 10 % от "
 "суммы пополнения!"
 
-#: handlers/users/pay_bill.py:34
+#: handlers/users/pay_bill.py:38
 msgid "Вибачте, але для вашого тарифу не передбачено поповнення рахунку через бот"
 msgstr "Извините, но для вашего тарифа не предусмотрено пополнение счета в боте"
 
-#: handlers/users/pay_bill.py:54
+#: handlers/users/pay_bill.py:59
 msgid "Користувач {} поповнив рахунок на {} {}"
 msgstr "Пользователь {} пополнил счет на {} {}"
 
@@ -60,13 +61,13 @@ msgid "Привіт, {}!\n"
 msgstr "Здравствуйте, {}!\n"
 
 #: handlers/users/start.py:34
-msgid "Оберіть зручну для вас мову!"
+msgid "Оберіть зручну для Вас мову!"
 msgstr "Выберите удобный для вас язык!"
 
-#: handlers/users/start.py:47
+#: handlers/users/start.py:46
 msgid ""
 "Ви обрали {}\n"
-" Тепер відпрате, будь ласка, свій контакт, щоб знайти вас у нашому білінгу"
+"Тепер відпрате, будь ласка, свій контакт, щоб знайти Вас у нашому білінгу"
 msgstr ""
 "Вы выбрали {}\n"
 "Теперь пожалуйста, отправьте ваш контакт чтобы найти вас в билинге"
@@ -75,7 +76,7 @@ msgstr ""
 msgid "Кнопка для цього знизу"
 msgstr "Кнопка для этого снизу"
 
-#: handlers/users/start.py:62 handlers/users/start.py:87
+#: handlers/users/start.py:63 handlers/users/start.py:91
 msgid ""
 "Ваш username: {}\n"
 "На вашому рахунку: {}\n"
@@ -91,7 +92,7 @@ msgstr ""
 "Состояние услуги: {}\n"
 "Ваш пакет: {}\n"
 
-#: handlers/users/start.py:71 handlers/users/start.py:96
+#: handlers/users/start.py:74 handlers/users/start.py:102
 msgid ""
 "Ви не зареєстровані у нашому білінгу\n"
 "Якщо ви хочете підключитися можете залишити заявку на підключення "
@@ -102,11 +103,11 @@ msgstr ""
 "Если вы хотите подключиться оставте заявку на подключение нажатием кнопки"
 "\n"
 
-#: handlers/users/start.py:105
+#: handlers/users/start.py:112
 msgid "Введіть ваше ПІБ, номер телефону та опишіть вашу проблему"
 msgstr "Введите ваше ФИО, номер телефона и опишите вашу проблему"
 
-#: handlers/users/start.py:123 handlers/users/start.py:149
+#: handlers/users/start.py:132 handlers/users/start.py:162
 msgid ""
 "Ваша заявка в опрацюванні, чекайте зв'язку\n"
 "Можете повернутись у головне меню скориставшись кнопці знизу"
@@ -114,13 +115,31 @@ msgstr ""
 "Ваша заявка в обработке, мы с вами свяжемся\n"
 "Моежете вернуться в главное меню по кнопке снизу"
 
-#: handlers/users/start.py:131
+#: handlers/users/start.py:142
 msgid ""
 "Введдіть ваше ПІБ та номер телефону, ми зв'яжемось з вами для обговорення"
 " вашого підключення\n"
 msgstr ""
 "Введите ваше ФИО и номер телефона, ми с вами свяжемся чтобы обсудить ваше"
 " подключение\n"
+
+#: handlers/users/time_pay.py:14
+msgid ""
+"Доступ в Інтернет розблоковано на 24 години!\n"
+"Рахунок поповнено на {} грн на 24 години!Тепер можете повернутись у "
+"головне меню"
+msgstr ""
+"Доступ в интернет разблокирован на 24 часа!\n"
+"Счет пополнен на {} грн на 24 часа! Теперь можете вернуться в "
+"главное меню"
+
+#: handlers/users/time_pay.py:20
+msgid ""
+"Ви не можете зробити тимчасовий платіж зараз!\n"
+"Користуватись тимчасвовим платежом можна тільки раз на місяць!"
+msgstr ""
+"Вы не мржете сделать временный платеж сейчас!\n"
+"Использовать временный платеж можно только раз в месяц!"
 
 msgid "Поповнити рахунок"
 msgstr "Пополнить счет"
@@ -139,4 +158,7 @@ msgstr "Оставить заявку на подключение"
 
 msgid "Змінити мову"
 msgstr "Сменить язык"
+
+msgid "Тимчасовий платіж"
+msgstr "Временный платеж"
 

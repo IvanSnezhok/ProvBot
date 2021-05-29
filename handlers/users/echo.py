@@ -1,5 +1,6 @@
 from aiogram import types
 from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters import Command
 
 from loader import dp, db
 
@@ -8,6 +9,7 @@ from middlewares import _, __
 
 # Эхо хендлер, куда летят текстовые сообщения без указанного состояния
 @dp.message_handler(content_types=types.ContentTypes.ANY, state=None)
+@dp.message_handler(Command(['help']))
 async def bot_echo(message: types.Message):
     await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
     msg = await message.answer(_("Для взаємодії з ботом вам потрібно натиснути кнопку"))

@@ -31,7 +31,7 @@ async def bot_start(message: types.Message):
     except asyncpg.exceptions.UniqueViolationError:
         await db.select_user(telegram_id=message.from_user.id)
 
-    await message.answer(text=_("Оберіть зручну для вас мову!"),
+    await message.answer(text=_("Оберіть зручну для Вас мову!"),
                          reply_markup=choice_lang
                          )
 
@@ -42,7 +42,7 @@ async def lang_reply(call: CallbackQuery):
     await db.set_lang(call.data[7:].lower(), call.from_user.id)
     await call.answer()
     msg = await call.message.edit_text(
-        text=_("Ви обрали {}\n Тепер відпрате, будь ласка, свій контакт, щоб знайти вас у нашому білінгу",
+        text=_("Ви обрали {}\nТепер відпрате, будь ласка, свій контакт, щоб знайти Вас у нашому білінгу",
                locale=call.data[7:].lower()).format(
             call.data[7:])
     )

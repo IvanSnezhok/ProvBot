@@ -22,7 +22,7 @@ async def search_query(tel):
     data.clear()
     plan.clear()
     try:
-        result = result[0]
+        logging.info(result = result[0])
         plan.append(result[5])
         await cur.execute('SELECT name FROM `plans2` WHERE id=%s', result[5])
         paket = await cur.fetchall()

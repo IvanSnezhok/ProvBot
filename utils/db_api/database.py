@@ -15,9 +15,9 @@ time_pay = []
 async def search_query(tel):
     conn = await aiomysql.connect(host=config.BILL_HOST, port=int(config.BILL_PORT),
                                   user=config.BILL_USER, password=config.BILL_PASS,
-                                  db=config.BILL_NAME, loop=loop)
+                                  db=config.BILL_NAME, loop=loop, use_unicode='cp1251')
     cur = await conn.cursor()
-    await cur.execute(f'SELECT name, balance, contract, fio, state, paket FROM `users` WHERE telefon="{tel}"')
+    await cur.execute('SELECT name, balance, contract, fio, state, paket FROM `users` WHERE telefon=%s', tel)
     result = await cur.fetchall()
     data.clear()
     plan.clear()
@@ -43,7 +43,7 @@ async def search_query(tel):
 async def pay_balance_150(contract):
     conn = await aiomysql.connect(host=config.BILL_HOST, port=int(config.BILL_PORT),
                                   user=config.BILL_USER, password=config.BILL_PASS,
-                                  db=config.BILL_NAME, loop=loop)
+                                  db=config.BILL_NAME, loop=loop, use_unicode='cp1251')
     cur = await conn.cursor()
     await cur.execute(f"UPDATE users set balance = balance + 150 WHERE contract={contract}")
     await cur.close()
@@ -53,7 +53,7 @@ async def pay_balance_150(contract):
 async def pay_balance(contract, payload):
     conn = await aiomysql.connect(host=config.BILL_HOST, port=int(config.BILL_PORT),
                                   user=config.BILL_USER, password=config.BILL_PASS,
-                                  db=config.BILL_NAME, loop=loop)
+                                  db=config.BILL_NAME, loop=loop, use_unicode='cp1251')
     cur = await conn.cursor()
     execute = payload, contract
     await cur.execute(f"UPDATE users set balance = balance + {payload} WHERE contract={contract}")
@@ -70,7 +70,7 @@ async def t_pay(contract):  # Временный плтажеж
 
     conn = await aiomysql.connect(host=config.BILL_HOST, port=int(config.BILL_PORT),
                                   user=config.BILL_USER, password=config.BILL_PASS,
-                                  db=config.BILL_NAME, loop=loop)
+                                  db=config.BILL_NAME, loop=loop, use_unicode='cp1251')
     cur = await conn.cursor()
     await cur.execute(
         f"SELECT t_pay, paket, srvs, contract, fio, telefon, start_day, balance, id FROM users WHERE contract={contract}")

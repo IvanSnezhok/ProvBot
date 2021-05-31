@@ -15,7 +15,7 @@ time_pay = []
 async def search_query(tel):
     conn = await aiomysql.connect(host=config.BILL_HOST, port=int(config.BILL_PORT),
                                   user=config.BILL_USER, password=config.BILL_PASS,
-                                  db=config.BILL_NAME, loop=loop, use_unicode='cp1251')
+                                  db=config.BILL_NAME, loop=loop, charset="p1251")
     cur = await conn.cursor()
     await cur.execute('SELECT name, balance, contract, fio, state, paket FROM `users` WHERE telefon=%s', tel)
     result = await cur.fetchall()
@@ -115,7 +115,6 @@ async def t_pay(contract):  # Временный плтажеж
                 ({id},{price},{next_t},'y','timepays','Platej sozdan {now_t}','Razblokirovan na 24 chasa', 't')""")
         await cur.execute(f"UPDATE users SET balance={balance} WHERE contract={contract}")
         await cur.execute(f"UPDATE users SET state='on' WHERE contract={contract}")
-        time_pay.append(balance)
         return True
     else:
         return False

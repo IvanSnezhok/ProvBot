@@ -51,12 +51,37 @@ async def pay_balance_150(contract):
 
 
 async def pay_balance(contract, payload):
+    now_time = time.time()
+    now_t = time.ctime(now_time)
+    next_t = time.time() + 86400
     conn = await aiomysql.connect(host=config.BILL_HOST, port=int(config.BILL_PORT),
                                   user=config.BILL_USER, password=config.BILL_PASS,
                                   db=config.BILL_NAME, loop=loop, use_unicode='cp1251')
     cur = await conn.cursor()
-    execute = payload, contract
+    await cur.execute(
+        f"SELECT paket, id FROM users WHERE contract={contract}")
+    user = await cur.fetchall()
+    try:
+        user = user[0]
+        paket = user[0]
+        id = user[1]
+    except IndexError:
+        user = None
+        logging.info("User not Found")
+        return False
+    if paket:
+        await cur.execute(f"SELECT price FROM plans2 WHERE id = {paket}")
+    price = await cur.fetchall()
+    try:
+        price = price[0]
+    except IndexError:
+        price = None
+        logging.info("Price not find")
+        return False
     await cur.execute(f"UPDATE users set balance = balance + {payload} WHERE contract={contract}")
+    await cur.execute(f"""INSERT INTO pays (mid,cash,time,admin,reason,coment)
+                   VALUES
+                   ({id},{price},{next_t}, 'BOT','Platej sozdan {now_t}','Popolnenie na {payload}')""")
     await cur.close()
     conn.close()
 

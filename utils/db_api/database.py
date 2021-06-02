@@ -79,9 +79,15 @@ async def pay_balance(contract, payload):
         logging.info("Price not find")
         return False
     await cur.execute(f"UPDATE users set balance = balance + {payload} WHERE contract={contract}")
-    await cur.execute(f"""INSERT INTO pays (mid,cash,time,admin,reason,coment)
-                   VALUES
-                   ({id},{price},{next_t}, 'BOT','Platej sozdan {now_t}','Popolnenie na {payload}')""")
+    await cur.execute("INSERT INTO pays (mid,cash,time,admin,reason,coment) VALUES (%s, %s, %s, %s, %s, %s)",
+                      (
+                          (id),
+                          (price),
+                          (next_t),
+                          ('BOT'),
+                          (str(now_t)),
+                          ('Popolnenie via BOT')
+                      ))
     await cur.close()
     conn.close()
 

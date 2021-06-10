@@ -39,7 +39,7 @@ async def changed_lang(message: types.Message):
         ], one_time_keyboard=True)
 
     msg = await message.answer(
-        text=_("Ви обрали {}\n Тепер можете перейти у головне меню",
+        text=_("Ви обрали {}\nТепер можете перейти у головне меню",
                locale=message.text[3:].lower()).format(message.text[3:]),
         reply_markup=return_button)
     await db.message("BOT", 10001, msg.html_text, msg.date)

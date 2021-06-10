@@ -15,7 +15,7 @@ time_pay = []
 async def search_query(tel):
     conn = await aiomysql.connect(host=config.BILL_HOST, port=int(config.BILL_PORT),
                                   user=config.BILL_USER, password=config.BILL_PASS,
-                                  db=config.BILL_NAME, loop=loop, charset="p1251")
+                                  db=config.BILL_NAME, loop=loop, charset="cp1251")
     cur = await conn.cursor()
     await cur.execute('SELECT name, balance, contract, fio, state, paket FROM `users` WHERE telefon=%s', tel)
     result = await cur.fetchall()

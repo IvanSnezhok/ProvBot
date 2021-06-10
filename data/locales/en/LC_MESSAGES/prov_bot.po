@@ -29,7 +29,7 @@ msgstr "Select a language"
 #: handlers/users/lang_change.py:43
 msgid ""
 "Ви обрали {}\n"
-" Тепер можете перейти у головне меню"
+"Тепер можете перейти у головне меню"
 msgstr ""
 "You have chosen {}\n"
 "Now you can go to the main menu"
@@ -150,7 +150,7 @@ msgid "Головне меню"
 msgstr "Main menu"
 
 msgid "Залишити заявку на виклик спеціаліста"
-msgstr "Leave a request to call a specialist"
+msgstr "Report an issue"
 
 msgid "Залишити заявку на підключення"
 msgstr "Leave a request for connection"

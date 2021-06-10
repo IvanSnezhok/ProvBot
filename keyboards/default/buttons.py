@@ -30,7 +30,7 @@ client_request = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
         KeyboardButton(text=__("Змінити мову"))
     ],
     [
-        KeyboardButton(text=__("Залишити заявку на виклик спеціаліста"))
+        KeyboardButton(text=__("Повідомити про проблему"))
     ]
 ], one_time_keyboard=True)
 

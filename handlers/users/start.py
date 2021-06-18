@@ -42,7 +42,7 @@ async def lang_reply(call: CallbackQuery):
     await db.set_lang(call.data[7:].lower(), call.from_user.id)
     await call.answer()
     msg = await call.message.edit_text(
-        text=_("Ви обрали {}\nТепер відпрате, будь ласка, свій контакт, щоб знайти Вас у нашому білінгу",
+        text=_("Ви обрали {}\nТепер відправте, будь ласка, свій номер телефону, щоб знайти Ваш обліковий запис у нашому білінгу",
                locale=call.data[7:].lower()).format(
             call.data[7:])
     )
@@ -71,9 +71,8 @@ async def ua_tel_get(message: types.Message):
         await db.message("BOT", 10001, msg.html_text, msg.date)
     else:
         msg = await message.answer(
-            text=_("Ви не зареєстровані у нашому білінгу\n"
-                   "Якщо ви хочете підключитися можете залишити заявку на підключення натиснувши "
-                   "кнопку\n "),
+            text=_("Вказаний номер телефону не знайдено у нашому білінгу\n"
+"Якщо ви бажаєте підключитися - залиште заявку на підключення натиснувши кнопку"),
             reply_markup=unknown_request_button)
         await db.message("BOT", 10001, msg.html_text, msg.date)
 
@@ -99,17 +98,16 @@ async def main_menu(message: types.Message):
         await db.message("BOT", 10001, msg.html_text, msg.date)
     else:
         msg1 = await message.answer(
-            text=_("Ви не зареєстровані у нашому білінгу\n"
-                   "Якщо ви хочете підключитися можете залишити заявку на підключення натиснувши "
-                   "кнопку\n "),
+            text=_("Вказаний номер телефону не знайдено у нашому білінгу\n"
+"Якщо ви бажаєте підключитися - залиште заявку на підключення натиснувши кнопку"),
             reply_markup=unknown_request_button, )
         await db.message("BOT", 10001, msg1.html_text, msg1.date)
 
 
-@dp.message_handler(Text(equals=__("Залишити заявку на виклик спеціаліста")))
+@dp.message_handler(Text(equals=__("Повідомити про проблему")))
 async def request_for_ts(message: types.Message):
     await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
-    msg = await message.answer(text=_("Введіть ваше ПІБ, номер телефону та опишіть вашу проблему"),
+    msg = await message.answer(text=_("Введіть ваше ПІБ, номер телефону та опишіть проблему"),
                                reply_markup=ReplyKeyboardRemove())
     await db.message("BOT", 10001, msg.html_text, msg.date)
     await Request.first()
@@ -129,8 +127,8 @@ async def tech_support_message(message: types.Message, state: FSMContext):
             except Exception as err:
                 logging.exception(err)
     await state.reset_state()
-    msg = await message.answer(text=_("Ваша заявка в опрацюванні, чекайте зв'язку\n"
-                                      "Можете повернутись у головне меню скориставшись кнопці знизу"),
+    msg = await message.answer(text=_("Заявка в опрацюванні, чекайте зв'язку\n"
+                                      "Можете повернутись у головне меню скориставшись кнопкою знизу"),
                                reply_markup=return_button)
     await db.message("BOT", 10001, msg.html_text, msg.date)
 
@@ -139,8 +137,8 @@ async def tech_support_message(message: types.Message, state: FSMContext):
 async def get_client(message: types.Message):
     await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
     msg = await message.answer(
-        text=_("Введдіть ваше ПІБ та номер телефону, ми зв'яжемось з вами для обговорення вашого "
-               "підключення\n"), reply_markup=ReplyKeyboardRemove())
+        text=_("Введіть ПІБ та номер телефону - ми зв'яжемось з Вами для підключення"),
+        reply_markup=ReplyKeyboardRemove())
     await db.message("BOT", 10001, msg.html_text, msg.date)
     await Client.first()
 
@@ -159,7 +157,7 @@ async def request_client(message: types.Message, state: FSMContext):
             except Exception as err:
                 logging.exception(err)
     await state.reset_state()
-    msg = await message.answer(text=_("Ваша заявка в опрацюванні, чекайте зв'язку\n"
-                                      "Можете повернутись у головне меню скориставшись кнопці знизу"),
+    msg = await message.answer(text=_("Заявка в опрацюванні, чекайте зв'язку\n"
+                                      "Можете повернутись у головне меню скориставшись кнопкою знизу"),
                                reply_markup=return_button)
     await db.message("BOT", 10001, msg.html_text, msg.date)

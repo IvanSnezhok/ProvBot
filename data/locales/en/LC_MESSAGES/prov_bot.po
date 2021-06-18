@@ -19,7 +19,7 @@ msgstr ""
 "Generated-By: Babel 2.9.1\n"
 
 #: handlers/users/echo.py:15
-msgid "Для взаємодії з ботом вам потрібно натиснути кнопку"
+msgid "Для взаємодії з ботом натисніть кнопку"
 msgstr "To interact with the bot, you need to press the button"
 
 #: handlers/users/lang_change.py:14
@@ -35,12 +35,12 @@ msgstr ""
 "Now you can go to the main menu"
 
 #: handlers/users/pay_bill.py:20 handlers/users/pay_bill.py:28
-msgid "Зверніть увагу, що тут ви можете поповнити тільки свій особистий рахунок!"
+msgid "Зверніть увагу, що тут ви можете поповнити тільки свій особовий рахунок!"
 msgstr "Please note that you can only top up your personal account!"
 
 #: handlers/users/pay_bill.py:24 handlers/users/pay_bill.py:33
 msgid ""
-"Діє акція - поповни рахунок на 6 місяців уперед та отримуй 10 % від суми "
+"Діє акція - поповни рахунок на 6 місяців одним платежем та отримуй 10% від суми "
 "поповнення!"
 msgstr ""
 "There is a special offer, replenish your account 6 months in advance and "
@@ -65,7 +65,7 @@ msgstr "Choose a language that is convenient for you!"
 #: handlers/users/start.py:46
 msgid ""
 "Ви обрали {}\n"
-"Тепер відпрате, будь ласка, свій контакт, щоб знайти Вас у нашому білінгу"
+"Тепер відправте, будь ласка, свій номер телефону, щоб знайти Ваш обліковий запис у нашому білінгу"
 msgstr ""
 "You choose {}\n"
 "Now please send your contact to find you in billing"
@@ -92,10 +92,9 @@ msgstr ""
 
 #: handlers/users/start.py:74 handlers/users/start.py:102
 msgid ""
-"Ви не зареєстровані у нашому білінгу\n"
-"Якщо ви хочете підключитися можете залишити заявку на підключення "
-"натиснувши кнопку\n"
-" "
+"Вказаний номер телефону не знайдено у нашому білінгу\n"
+"Якщо ви бажаєте підключитися - залиште заявку на підключення "
+"натиснувши кнопку"
 msgstr ""
 "Wee are not registered in our billing\n"
 "If you want to connect, leave a request for connection by pressing the "
@@ -103,21 +102,21 @@ msgstr ""
 " "
 
 #: handlers/users/start.py:112
-msgid "Введіть ваше ПІБ, номер телефону та опишіть вашу проблему"
+msgid "Введіть ваше ПІБ, номер телефону та опишіть проблему"
 msgstr "Enter your full name, phone number and describe your problem"
 
 #: handlers/users/start.py:132 handlers/users/start.py:162
 msgid ""
-"Ваша заявка в опрацюванні, чекайте зв'язку\n"
-"Можете повернутись у головне меню скориставшись кнопці знизу"
+"Заявка в опрацюванні, чекайте зв'язку\n"
+"Можете повернутись у головне меню скориставшись кнопкою знизу"
 msgstr ""
 "Your application is being processed, we will contact you \n"
 "You can return to the main menu by clicking the button below"
 
 #: handlers/users/start.py:142
 msgid ""
-"Введдіть ваше ПІБ та номер телефону, ми зв'яжемось з вами для обговорення"
-" вашого підключення\n"
+"Введіть ПІБ та номер телефону - ми зв'яжемось з Вами для"
+" підключення\n"
 msgstr ""
 "Enter your full name and phone number, we will contact you to discuss "
 "your connection \n"
@@ -134,8 +133,8 @@ msgstr ""
 
 #: handlers/users/time_pay.py:20
 msgid ""
-"Ви не можете зробити тимчасовий платіж зараз!\n"
-"Користуватись тимчасвовим платежом можна тільки раз на місяць!"
+"Ви не можете використати тимчасовий платіж!\n"
+"Користуватись тимчасовим платежем можна раз на місяць!"
 msgstr ""
 "You cannot make a temporary payment now!\n"
 "You can only use the temporary payment once a month!"

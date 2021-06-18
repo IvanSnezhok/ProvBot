@@ -146,6 +146,8 @@ async def t_pay(contract):  # Временный плтажеж
                 ({id},{price},{next_t},'y','timepays','Platej sozdan {now_t}','Razblokirovan na 24 chasa', 't')""")
         await cur.execute(f"UPDATE users SET balance={balance} WHERE contract={contract}")
         await cur.execute(f"UPDATE users SET state='on' WHERE contract={contract}")
+        time_pay.clear()
+        time_pay.append(balance)
         return True
     else:
         return False

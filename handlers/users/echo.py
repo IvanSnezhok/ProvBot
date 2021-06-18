@@ -12,7 +12,7 @@ from middlewares import _, __
 @dp.message_handler(Command(['help']))
 async def bot_echo(message: types.Message):
     await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
-    msg = await message.answer(_("Для взаємодії з ботом вам потрібно натиснути кнопку"))
+    msg = await message.answer(_("Для взаємодії з ботом натисніть кнопку"))
     await db.message("BOT", 10001, msg.html_text, msg.date)
 
 

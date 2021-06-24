@@ -20,7 +20,8 @@ from utils.format_number import format_number
 @dp.message_handler(CommandStart())
 async def bot_start(message: types.Message):
     await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
-    await message.answer(text=_("Привіт, {}!\n").format(message.from_user.full_name),
+    await message.answer(text=_("Привіт, {}!\n"
+                                "Бот працює в тестовому режимі").format(message.from_user.full_name),
                          reply_markup=ReplyKeyboardRemove())
     try:
         await db.add_user(
@@ -59,6 +60,10 @@ async def ua_tel_get(message: types.Message):
     tel = format_number(tel)
     await db.update_phone_number(tel, message.from_user.id)
     await database.search_query(tel)
+    try:
+        await db.set_contract(database.data[2], message.from_user.id)
+    except IndexError:
+        pass
     if len(database.data) > 0:
         msg = await message.answer(text=_("Ваш username: {}\n"
                                           "На вашому рахунку: {}\n"

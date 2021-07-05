@@ -162,3 +162,15 @@ msgstr "Change the language"
 msgid "Тимчасовий платіж"
 msgstr "Temporary payment"
 
+msgid "@infoaura_bot - бот мережі інтернет-провайдера Інфоаура.\n"
+       "Бот призначений для доступного управлінням послугами, поповнення рахунку і виклику фахівця для вирішення локальних проблем Клієнта.\n"
+       "Пропозиції та зауваження по роботі бота просимо писати на email: bot@infoaura.com.ua."
+msgstr "@infoaura_bot is the bot of the network provider Infoaura.\n"
+        "The bot is designed to be accessible to service management, account replenishment and call a specialist to solve local problems of the Client.\n"
+        "Suggestions and comments on the work of the bot, please write to email: bot@infoaura.com.ua."
+
+msgid "Увімкнено"
+msgstr "Enabled"
+
+msgid "Вимкнено"
+msgstr "Off"

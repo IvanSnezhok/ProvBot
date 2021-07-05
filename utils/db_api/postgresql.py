@@ -127,3 +127,7 @@ class Database:
     async def set_contract(self, contract, telegram_id):
         sql = "UPDATE users SET contract=$1 WHERE telegram_id=$2"
         await self.execute(sql, contract, telegram_id, execute=True)
+
+    async def choose_contract(self):
+        sql = "SELECT full_name, telegram_id, contract FROM users"
+        return await self.execute(sql, execute=True, fetch=True)

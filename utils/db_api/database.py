@@ -151,3 +151,20 @@ async def t_pay(contract):  # Временный плтажеж
         return True
     else:
         return False
+
+async def check_net_pause(contract):
+    # IF TRUE, NETPAUSE IS OFF
+    # IF FALSE, NETPAUSE IS ON
+    conn = await aiomysql.connect(host=config.BILL_HOST, port=int(config.BILL_PORT),
+                                  user=config.BILL_USER, password=config.BILL_PASS,
+                                  db=config.BILL_NAME, loop=loop, use_unicode='cp1251')
+    cur = await conn.cursor()
+    await cur.execute(f"SELECT id FROM users WHERE contract = {contract};")
+    id = await cur.fetchall()
+    id = id[0]
+    await cur.execute("SELECT data FROM netpause WHERE mid = %s", id)
+    net = await cur.fetchall()
+    if net[0] == 0:
+        return True
+    else:
+        return False

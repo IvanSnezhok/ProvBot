@@ -3,8 +3,8 @@ import logging
 import asyncpg
 from aiogram import types
 from aiogram.dispatcher import FSMContext
-from aiogram.dispatcher.filters.builtin import CommandStart, Text
-from aiogram.types import CallbackQuery, ReplyKeyboardRemove
+from aiogram.dispatcher.filters.builtin import CommandStart, Text, CommandHelp, Command, AdminFilter
+from aiogram.types import CallbackQuery, ReplyKeyboardRemove, User
 
 from data.config import ADMINS
 from keyboards.default.buttons import tel_button, return_button, client_request, unknown_request_button
@@ -37,14 +37,26 @@ async def bot_start(message: types.Message):
                          )
 
 
+@dp.message_handler(CommandHelp())
+async def help_message(message: types.Message):
+    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
+    msg = await message.answer(
+        text=_("@infoaura_bot - бот мережі інтернет-провайдера Інфоаура.\n"
+               "Бот призначений для доступного управлінням послугами, поповнення рахунку і виклику фахівця для вирішення локальних проблем Клієнта.\n"
+               "Пропозиції та зауваження по роботі бота просимо писати на email: bot@infoaura.com.ua."),
+        reply_markup=return_button)
+    await db.message("BOT", 10001, msg.html_text, msg.date)
+
+
 @dp.callback_query_handler(start_callback.filter(lang=["RU", "UA", "EN"]))
 async def lang_reply(call: CallbackQuery):
     await db.message(call.from_user.full_name, call.from_user.id, call.message.text, call.message.date)
     await db.set_lang(call.data[7:].lower(), call.from_user.id)
     await call.answer()
     msg = await call.message.edit_text(
-        text=_("Ви обрали {}\nТепер відправте, будь ласка, свій номер телефону, щоб знайти Ваш обліковий запис у нашому білінгу",
-               locale=call.data[7:].lower()).format(
+        text=_(
+            "Ви обрали {}\nТепер відправте, будь ласка, свій номер телефону, щоб знайти Ваш обліковий запис у нашому білінгу",
+            locale=call.data[7:].lower()).format(
             call.data[7:])
     )
     await db.message("BOT", 10001, msg.html_text, msg.date)
@@ -64,20 +76,34 @@ async def ua_tel_get(message: types.Message):
         await db.set_contract(database.data[2], message.from_user.id)
     except IndexError:
         pass
+    net_on = _("Увімкнено")
+    net_off = _("Вимкнено")
     if len(database.data) > 0:
-        msg = await message.answer(text=_("Ваш username: {}\n"
-                                          "На вашому рахунку: {}\n"
-                                          "Ваш номер договору: {}\n"
-                                          "Ваше ПІБ: {}\n"
-                                          "Стан послуги: {}\n"
-                                          "Ваш пакет: {}").format(
-            database.data[0], database.data[1], database.data[2], database.data[3], database.data[4], database.data[5]),
-            reply_markup=client_request)
-        await db.message("BOT", 10001, msg.html_text, msg.date)
+        if await database.check_net_pause(database.data[2]) and database.data[4] == "on":
+            msg = await message.answer(text=_("Ваш username: {}\n"
+                                              "На вашому рахунку: {}\n"
+                                              "Ваш номер договору: {}\n"
+                                              "Ваше ПІБ: {}\n"
+                                              "Стан послуги: {}\n"
+                                              "Ваш пакет: {}").format(
+                database.data[0], database.data[1], database.data[2], database.data[3], net_on, database.data[5]),
+                reply_markup=client_request)
+            await db.message("BOT", 10001, msg.html_text, msg.date)
+        else:
+            msg = await message.answer(text=_("Ваш username: {}\n"
+                                              "На вашому рахунку: {}\n"
+                                              "Ваш номер договору: {}\n"
+                                              "Ваше ПІБ: {}\n"
+                                              "Стан послуги: {}\n"
+                                              "Ваш пакет: {}").format(
+                database.data[0], database.data[1], database.data[2], database.data[3], net_off, database.data[5]),
+                reply_markup=client_request)
+            await db.message("BOT", 10001, msg.html_text, msg.date)
+
     else:
         msg = await message.answer(
             text=_("Вказаний номер телефону не знайдено у нашому білінгу\n"
-"Якщо ви бажаєте підключитися - залиште заявку на підключення натиснувши кнопку"),
+                   "Якщо ви бажаєте підключитися - залиште заявку на підключення натиснувши кнопку"),
             reply_markup=unknown_request_button)
         await db.message("BOT", 10001, msg.html_text, msg.date)
 
@@ -91,22 +117,35 @@ async def main_menu(message: types.Message):
         await db.set_contract(database.data[2], message.from_user.id)
     except IndexError:
         pass
+    net_on = __("Увімкнено")
+    net_off = __("Вимкнено")
     if len(database.data) > 0:
-        msg = await message.answer(text=_("Ваш username: {}\n"
-                                          "На вашому рахунку: {}\n"
-                                          "Ваш номер договору: {}\n"
-                                          "Ваше ПІБ: {}\n"
-                                          "Стан послуги: {}\n"
-                                          "Ваш пакет: {}").format(
-            database.data[0], database.data[1], database.data[2], database.data[3], database.data[4], database.data[5]),
-            reply_markup=client_request)
-        await db.message("BOT", 10001, msg.html_text, msg.date)
+        if await database.check_net_pause(database.data[2]) is True and database.data[4] == "on":
+            msg = await message.answer(text=_("Ваш username: {}\n"
+                                              "На вашому рахунку: {}\n"
+                                              "Ваш номер договору: {}\n"
+                                              "Ваше ПІБ: {}\n"
+                                              "Стан послуги: {}\n"
+                                              "Ваш пакет: {}").format(
+                database.data[0], database.data[1], database.data[2], database.data[3], net_on, database.data[5]),
+                reply_markup=client_request)
+            await db.message("BOT", 10001, msg.html_text, msg.date)
+        else:
+            msg = await message.answer(text=_("Ваш username: {}\n"
+                                              "На вашому рахунку: {}\n"
+                                              "Ваш номер договору: {}\n"
+                                              "Ваше ПІБ: {}\n"
+                                              "Стан послуги: {}\n"
+                                              "Ваш пакет: {}").format(
+                database.data[0], database.data[1], database.data[2], database.data[3], net_off, database.data[5]),
+                reply_markup=client_request)
+            await db.message("BOT", 10001, msg.html_text, msg.date)
     else:
-        msg1 = await message.answer(
+        msg = await message.answer(
             text=_("Вказаний номер телефону не знайдено у нашому білінгу\n"
-"Якщо ви бажаєте підключитися - залиште заявку на підключення натиснувши кнопку"),
-            reply_markup=unknown_request_button, )
-        await db.message("BOT", 10001, msg1.html_text, msg1.date)
+                   "Якщо ви бажаєте підключитися - залиште заявку на підключення натиснувши кнопку"),
+            reply_markup=unknown_request_button)
+        await db.message("BOT", 10001, msg.html_text, msg.date)
 
 
 @dp.message_handler(Text(equals=__("Повідомити про проблему")))

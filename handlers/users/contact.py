@@ -18,8 +18,11 @@ async def get_id(message: types.Message, state: FSMContext):
     await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
     if message.from_user.id == 390616685 or message.from_user.id == 133347159:
         client_id = await db.choose_contract()
-        msg = await message.answer(text=_("Оберіть клієнта, написав його telegram_id\n"
-                                          "{}").format(client_id))
+        msg = await message.answer(text=_("Оберіть клієнта, написав його telegram_id\n"))
+        for i in client_id:
+            await message.answer(f"Імя: {i[0]}\n"
+                                 f"Телеграм айді: {i[1]}\n"
+                                 f"Контракт: {i[2]}")
         await db.message("BOT", 10001, msg.html_text, msg.date)
         await Contract.get_id.set()
     else:

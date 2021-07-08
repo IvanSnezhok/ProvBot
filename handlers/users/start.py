@@ -78,8 +78,9 @@ async def ua_tel_get(message: types.Message):
         pass
     net_on = _("Увімкнено")
     net_off = _("Вимкнено")
+    net_pause = await database.check_net_pause(database.data[2])
     if len(database.data) > 0:
-        if await database.check_net_pause(database.data[2]) and database.data[4] == "on":
+        if net_pause is True and database.data[4] == "on":
             msg = await message.answer(text=_("Ваш username: {}\n"
                                               "На вашому рахунку: {}\n"
                                               "Ваш номер договору: {}\n"

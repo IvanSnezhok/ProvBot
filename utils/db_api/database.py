@@ -17,7 +17,9 @@ async def search_query(tel):
                                   user=config.BILL_USER, password=config.BILL_PASS,
                                   db=config.BILL_NAME, loop=loop, charset="cp1251")
     cur = await conn.cursor()
-    await cur.execute('SELECT name, balance, contract, fio, state, paket FROM `users` WHERE telefon=%s', tel)
+    await cur.execute("SELECT name, balance, contract, fio, state, paket "
+                      "FROM `users` "
+                      f"WHERE telefon LIKE '{tel}%' ")
     result = await cur.fetchall()
     data.clear()
     plan.clear()
@@ -164,7 +166,9 @@ async def check_net_pause(contract):
     id = id[0]
     await cur.execute("SELECT data FROM netpause WHERE mid = %s", id)
     net = await cur.fetchall()
-    if net[0] == 0:
+    if net[0][0] == 0:
         return True
+    elif net[0][0] == 1:
+        return False
     else:
         return False

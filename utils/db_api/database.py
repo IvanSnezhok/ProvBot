@@ -154,6 +154,7 @@ async def t_pay(contract):  # Временный плтажеж
     else:
         return False
 
+
 async def check_net_pause(contract):
     # IF TRUE, NETPAUSE IS OFF
     # IF FALSE, NETPAUSE IS ON
@@ -166,9 +167,12 @@ async def check_net_pause(contract):
     id = id[0]
     await cur.execute("SELECT data FROM netpause WHERE mid = %s", id)
     net = await cur.fetchall()
-    if net[0][0] == 0:
+    try:
+        if net[0][0] == 0:
+            return True
+        elif net[0][0] == 1:
+            return False
+        else:
+            return False
+    except IndexError:
         return True
-    elif net[0][0] == 1:
-        return False
-    else:
-        return False

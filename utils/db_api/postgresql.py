@@ -131,3 +131,7 @@ class Database:
     async def choose_contract(self):
         sql = "SELECT full_name, telegram_id, contract FROM users"
         return await self.execute(sql, execute=True, fetch=True)
+
+    async def contract(self):
+        sql = "SELECT telegram_id, contract FROM users"
+        return await self.execute(sql, execute=True, fetch=True)

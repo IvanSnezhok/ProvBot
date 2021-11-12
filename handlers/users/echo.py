@@ -39,15 +39,14 @@ async def bot_echo(message: types.Message):
                        "Якщо ви бажаєте підключитися - залиште заявку на підключення натиснувши кнопку"),
                 reply_markup=unknown_request_button)
             await db.message("BOT", 10001, msg.html_text, msg.date)
-        for admin in ADMINS:
-            try:
-                msg = await dp.bot.send_message(chat_id=admin,
-                                                text=f"Сообщения от пользователя: {message.from_user.full_name}\n"
-                                                     f"Текст сообщения: {message.text}\n"
-                                                     f"Телефон: {await db.select_tel(message.from_user.id)}")
-                await db.message("BOT", 10001, msg.html_text, msg.date)
-            except Exception as err:
-                logging.exception(err)
+        try:
+            msg = await dp.bot.send_message(chat_id=390616685,
+                                            text=f"Сообщения от пользователя: {message.from_user.full_name}\n"
+                                                 f"Текст сообщения: {message.text}\n"
+                                                 f"Телефон: {await db.select_tel(message.from_user.id)}")
+            await db.message("BOT", 10001, msg.html_text, msg.date)
+        except Exception as err:
+            logging.exception(err)
     else:
         await database.search_query(tel)
         if len(database.data) > 0:
@@ -67,15 +66,14 @@ async def bot_echo(message: types.Message):
                        "Якщо ви бажаєте підключитися - залиште заявку на підключення натиснувши кнопку"),
                 reply_markup=unknown_request_button)
             await db.message("BOT", 10001, msg.html_text, msg.date)
-        for admin in ADMINS:
-            try:
-                msg = await dp.bot.send_message(chat_id=admin,
-                                                text=f"Сообщения от пользователя: {message.from_user.full_name}\n"
-                                                     f"Текст сообщения: {message.text}\n"
-                                                     f"Пользователь без телефона")
-                await db.message("BOT", 10001, msg.html_text, msg.date)
-            except Exception as err:
-                logging.exception(err)
+        try:
+            msg = await dp.bot.send_message(chat_id=390616685,
+                                            text=f"Сообщения от пользователя: {message.from_user.full_name}\n"
+                                                 f"Текст сообщения: {message.text}\n"
+                                                 f"Пользователь без телефона")
+            await db.message("BOT", 10001, msg.html_text, msg.date)
+        except Exception as err:
+            logging.exception(err)
 
 # Эхо хендлер, куда летят ВСЕ сообщения с указанным состоянием
 # @dp.message_handler(state="*", content_types=types.ContentTypes.ANY)

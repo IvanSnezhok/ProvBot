@@ -175,3 +175,7 @@ msgstr "Включена"
 
 msgid "Вимкнено"
 msgstr "Выключена"
+
+#: keyboards/default/buttons.py:7
+msgid "Відправити номер телефону"
+msgstr "Отправить номер телефона"

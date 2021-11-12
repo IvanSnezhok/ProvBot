@@ -16,7 +16,7 @@ from utils.db_api import database
 async def contract_pay(message: types.Message):
     await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
     await database.search_query(tel=await db.select_tel(user_id=message.from_user.id))
-    if database.data[5] == '150.':
+    if database.data[5] == '150.' or database.data[5] == 'ТВ-150':
         msg = await message.answer(text=_("Зверніть увагу, що тут ви можете поповнити тільки свій особовий рахунок!"))
         await db.message("BOT", 10001, msg.html_text, msg.date)
         await bot.send_invoice(message.from_user.id, **P150.generate_invoice(), payload=150)
@@ -26,13 +26,11 @@ async def contract_pay(message: types.Message):
         await bot.send_invoice(message.from_user.id, **P900.generate_invoice(), payload=900)
     elif database.data[5] == '200':
         msg = await message.answer(text=_("Зверніть увагу, що тут ви можете поповнити тільки свій особовий рахунок!"))
-        await bot.send_invoice(message.from_user.id, **P200.generate_invoice(),
-                               payload=200)
+        await bot.send_invoice(message.from_user.id, **P200.generate_invoice(), payload=200)
         await db.message("BOT", 10001, msg.html_text, msg.date)
         msg1 = await message.answer(
             text=_("Діє акція - поповни рахунок на 6 місяців одним платежем та отримуй 10% від суми поповнення!"))
-        await bot.send_invoice(message.from_user.id, **P1200.generate_invoice(),
-                               payload=1200)
+        await bot.send_invoice(message.from_user.id, **P1200.generate_invoice(), payload=1200)
         await db.message("BOT", 10001, msg1.html_text, msg1.date)
     else:
         msg = await message.answer(text=_("Вибачте, але для вашого тарифу не передбачено поповнення рахунку через бот"),

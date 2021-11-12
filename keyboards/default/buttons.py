@@ -4,7 +4,7 @@ from middlewares import __
 
 tel_button = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
     [
-        KeyboardButton(text="📱",
+        KeyboardButton(text=__("Відправити номер телефону"),
                        request_contact=True)
     ]
 ], one_time_keyboard=True)

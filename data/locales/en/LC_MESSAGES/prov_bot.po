@@ -174,3 +174,7 @@ msgstr "Enabled"
 
 msgid "Вимкнено"
 msgstr "Off"
+
+#: keyboards/default/buttons.py:7
+msgid "Відправити номер телефону"
+msgstr "Send phone number"

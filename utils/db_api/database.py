@@ -42,6 +42,24 @@ async def search_query(tel):
     conn.close()
 
 
+async def balance(contract):
+    conn = await aiomysql.connect(host=config.BILL_HOST, port=int(config.BILL_PORT),
+                                  user=config.BILL_USER, password=config.BILL_PASS,
+                                  db=config.BILL_NAME, loop=loop, use_unicode='cp1251')
+    cur = await conn.cursor()
+    await cur.execute("SELECT balance, paket FROM users WHERE contract=%s", contract)
+    client_balance = await cur.fetchall()
+    client_balance = client_balance[0]
+    await cur.execute('SELECT price FROM `plans2` WHERE id=%s', client_balance[1])
+    tariff = await cur.fetchall()
+    tariff = tariff[0][0]
+    inequality = tariff[0] - client_balance[0]
+    if inequality >= tariff:
+        return False
+    else:
+        return inequality
+
+
 async def pay_balance_150(contract):
     conn = await aiomysql.connect(host=config.BILL_HOST, port=int(config.BILL_PORT),
                                   user=config.BILL_USER, password=config.BILL_PASS,
@@ -145,7 +163,7 @@ async def t_pay(contract):  # Временный плтажеж
         await cur.execute(f"UPDATE users SET t_pay=1 WHERE contract={contract}")
         await cur.execute(f"""INSERT INTO pays (mid,cash,time,bonus,admin,reason,coment,flag)
                 VALUES
-                ({id},{price},{next_t},'y','timepays','Platej sozdan {now_t}','Razblokirovan na 24 chasa', 't')""")
+                ({id},{price},{next_t},'y','BOT','Platej sozdan {now_t}','Razblokirovan na 24 chasa', 't')""")
         await cur.execute(f"UPDATE users SET balance={balance} WHERE contract={contract}")
         await cur.execute(f"UPDATE users SET state='on' WHERE contract={contract}")
         time_pay.clear()

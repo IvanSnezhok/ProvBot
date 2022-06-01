@@ -162,11 +162,17 @@ async def request_for_ts(message: types.Message):
 async def tech_support_message(message: types.Message, state: FSMContext):
     await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
     answer = message.text
+    user = await db.select_user_by_id(message.from_user.id)
     async with state.proxy() as data:
         data["Заявка"] = answer
         for admin in ADMINS:
             try:
                 msg = await dp.bot.send_message(admin, f"Завка на виклик майстра: {data['Заявка']}")
+                msg1 = await dp.bot.send_message(admin, f"Користувач: {user[1]}"
+                                                        f"\nНомер телефону: {user[5]}"
+                                                        f"\nНомер договору: {user[6]}"
+                                                        f"\nТелеграм ІД: {user[3]}")
+                await db.message("BOT", 10001, msg1.html_text, msg1.date)
                 await db.message("BOT", 10001, msg.html_text, msg.date)
 
             except Exception as err:
@@ -192,11 +198,17 @@ async def get_client(message: types.Message):
 async def request_client(message: types.Message, state: FSMContext):
     await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
     answer = message.text
+    user = await db.select_user_by_id(message.from_user.id)
     async with state.proxy() as data:
         data["Заявка"] = answer
         for admin in ADMINS:
             try:
                 msg = await dp.bot.send_message(admin, f"Заявка на подключение: {data['Заявка']}")
+                msg1 = await dp.bot.send_message(admin, f"Користувач: {user[1]}"
+                                                        f"\nНомер телефону: {user[5]}"
+                                                        f"\nНомер договору: {user[6]}"
+                                                        f"\nТелеграм ІД: {user[3]}")
+                await db.message("BOT", 10001, msg1.html_text, msg1.date)
                 await db.message("BOT", 10001, msg.html_text, msg.date)
 
             except Exception as err:

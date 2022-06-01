@@ -102,7 +102,7 @@ async def pay_balance(contract, payload):
     await cur.execute("INSERT INTO pays (mid,cash,time,admin,reason,coment) VALUES (%s, %s, %s, %s, %s, %s)",
                       (
                           (id),
-                          (price),
+                          (payload),
                           (next_t),
                           ('BOT'),
                           (str(now_t)),
@@ -194,3 +194,20 @@ async def check_net_pause(contract):
             return False
     except IndexError:
         return True
+
+
+async def tel_by_group(group: int = 8):
+    conn = await aiomysql.connect(host=config.BILL_HOST, port=int(config.BILL_PORT),
+                                  user=config.BILL_USER, password=config.BILL_PASS,
+                                  db=config.BILL_NAME, loop=loop, use_unicode='cp1251')
+    cur = await conn.cursor()
+    await cur.execute(f"SELECT telefon FROM users WHERE grp = {group}")
+    phone = await cur.fetchall()
+    try:
+        phone_array = []
+        for i in phone:
+            phone_array.append(i[0])
+        return phone_array
+    except Exception as e:
+        print(e)
+        pass

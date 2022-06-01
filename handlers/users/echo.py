@@ -7,12 +7,17 @@ from aiogram.dispatcher.filters import Command
 from data.config import ADMINS
 from keyboards.default.buttons import return_button, tel_button, client_request, unknown_request_button
 from loader import dp, db
+from utils.db_api.database import tel_by_group
 
 from middlewares import _, __
 
-
-# Эхо хендлер, куда летят текстовые сообщения без указанного состояния
 from utils.db_api import database
+
+
+@dp.message_handler(Command('phone'))
+async def phones_message(message: types.Message, state: FSMContext):
+    phones = await tel_by_group()
+    await message.answer(phones, reply_markup=return_button)
 
 
 @dp.message_handler(content_types=types.ContentTypes.ANY, state=None)

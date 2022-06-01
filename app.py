@@ -6,6 +6,7 @@ from aiogram import executor, Dispatcher
 from loader import dp, db, scheduler
 import middlewares, filters, handlers
 from utils.db_api import database
+from utils.misc.sms_message import send_message
 from utils.notify_admins import on_startup_notify, on_shutdown_notify
 
 
@@ -29,7 +30,7 @@ async def notify_clients(dp: Dispatcher):
 
 
 def scheduler_jobs():
-    scheduler.add_job(notify_clients, "cron", day="9", hour="22", minute="43", args=(dp,))
+    scheduler.add_job(send_message, 'interval', minutes=1)
 
 
 async def on_startup(dispatcher):

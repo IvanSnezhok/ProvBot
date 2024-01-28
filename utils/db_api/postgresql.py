@@ -65,6 +65,31 @@ class Database:
         """
         await self.execute(sql, execute=True)
 
+    async def create_table_alarm(self):
+        sql = """
+        CREATE TABLE IF NOT EXISTS alarm (
+        alarm_id SERIAL PRIMARY KEY,
+        message VARCHAR(255) NOT NULL,
+        grp_alarm VARCHAR(255) NOT NULL,
+        street varchar(255),
+        street_number varchar(255)
+        );
+        """
+        await self.execute(sql, execute=True)
+
+    async def create_table_bill_check(self):
+        sql = """
+        CREATE TABLE IF NOT EXISTS bill_check (
+        bill_id SERIAL PRIMARY KEY,
+        telegram_id BIGINT NOT NULL,
+        date TIMESTAMP NOT NULL,
+        username varchar(255),
+        contract varchar(255),
+        pay_amount varchar(255)
+        );
+        """
+        await self.execute(sql, execute=True)
+
     @staticmethod
     def format_args(sql, parameters: dict):
         sql += " AND ".join([
@@ -110,6 +135,10 @@ class Database:
         sql = "SELECT COUNT(*) FROM Users"
         return await self.execute(sql, fetchval=True)
 
+    async def count_contract_users(self):
+        sql = "SELECT COUNT(*) FROM users WHERE contract IS NOT NULL"
+        return await self.execute(sql, fetchval=True)
+
     async def update_user_username(self, username, telegram_id):
         sql = "UPDATE Users SET username=$1 WHERE telegram_id=$2"
         return await self.execute(sql, username, telegram_id, execute=True)
@@ -142,4 +171,64 @@ class Database:
 
     async def select_id_by_phone(self, phone_number):
         sql = "SELECT telegram_id FROM users WHERE phone_number=$1"
-        return await self.execute(sql, phone_number, execute=True, fetchval=True)
+        return await self.execute(sql, phone_number, execute=True, fetch=True)
+
+
+    async def get_phone_by_contract(self, contract):
+        sql = "SELECT phone_number FROM users WHERE contract=$1"
+        return await self.execute(sql, contract, fetchval=True)
+
+    async def set_ban(self, telegram_id):
+        sql = "UPDATE users SET ban=TRUE WHERE telegram_id=$1"
+        return await self.execute(sql, int(telegram_id), execute=True)
+
+    async def set_unban(self, telegram_id):
+        sql = "UPDATE users SET ban=FALSE WHERE telegram_id=$1"
+        return await self.execute(sql, int(telegram_id), execute=True)
+
+    async def get_ban(self):
+        sql = "SELECT telegram_id, contract FROM users WHERE ban=TRUE"
+        rec_ban = await self.execute(sql, fetch=True)
+        ban_list = [(i[0], i[1]) for i in rec_ban]
+        return ban_list
+
+    async def insert_alarm(self, message, grp_alarm):
+        if grp_alarm is None:
+            sql = "INSERT INTO alarm (message) VALUES ($1)"
+            return await self.execute(sql, message, execute=True)
+        else:
+            sql = "INSERT INTO alarm (message, grp_alarm) VALUES ($1, $2)"
+            return await self.execute(sql, message, grp_alarm, execute=True)
+
+    async def get_alarm(self):
+        sql = "SELECT * FROM alarm"
+        return await self.execute(sql, fetch=True)
+
+    async def change_alarm_message(self, message, alarm_id):
+        sql = "UPDATE alarm SET message=$1 WHERE alarm_id=$2"
+        return await self.execute(sql, message, alarm_id, execute=True)
+
+    async def delete_alarm(self, alarm_id):
+        sql = "DELETE FROM alarm WHERE alarm_id=$1"
+        return await self.execute(sql, int(alarm_id), execute=True)
+
+    async def set_alarm_for_users(self, contract):
+        sql = "UPDATE users SET alarm=TRUE WHERE contract=$1"
+        return await self.execute(sql, contract, execute=True)
+
+    async def is_alarm(self, telegram_id):
+        sql = "SELECT contract FROM users WHERE telegram_id=$1 and alarm=TRUE"
+        alarm = await self.execute(sql, telegram_id, fetchval=True)
+        if alarm:
+            return True
+        else:
+            return False
+
+    async def get_alarm_message(self, grp_alarm):
+        sql = "SELECT message FROM alarm WHERE grp_alarm LIKE '%$1%'"
+        return await self.execute(sql, str(grp_alarm), fetchval=True)
+
+    async def add_bill(self, bill_id, telegram_id, date, username, contract, pay_amount):
+        sql = "INSERT INTO bill_check (bill_id, telegram_id, date, username, contract, pay_amount) VALUES ($1, $2, $3, $4, $5, $6)"
+        return await self.execute(sql, bill_id, telegram_id, date, username, contract, pay_amount, execute=True)
+

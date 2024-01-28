@@ -5,7 +5,8 @@ from middlewares import __
 tel_button = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
     [
         KeyboardButton(text=__("Відправити номер телефону"),
-                       request_contact=True)
+                       request_contact=True),
+        KeyboardButton(text=__("Поповнити рахунок"))
     ]
 ], one_time_keyboard=True)
 
@@ -19,7 +20,8 @@ request_button = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
 unknown_request_button = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
     [
         KeyboardButton(text=__("Залишити заявку на підключення")),
-        KeyboardButton(text=__("Змінити мову"))
+        KeyboardButton(text=__("Змінити мову")),
+        KeyboardButton(text=__("Поповнити рахунок"))
     ]
 ])
 

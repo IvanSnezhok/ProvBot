@@ -1,3 +1,4 @@
+from .panel import dp
 from .start import dp
 from .contact import dp
 from .pay_bill import dp

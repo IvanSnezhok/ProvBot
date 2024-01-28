@@ -11,8 +11,13 @@ from keyboards.default.buttons import lang_change
 @dp.message_handler(Text(equals=__("Змінити мову")))
 async def change_lang(message: types.Message):
     await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
-    msg = await message.answer(text=_("Оберіть мову"), reply_markup=lang_change)
-    await db.message("BOT", 10001, msg.html_text, msg.date)
+    ban = await db.get_ban()
+    if message.from_user.id in ban:
+        await message.answer(
+            _("Вітаємо! Для звернення, будь-ласка, скористайтесь нашим email технічної підтримки support@infoaura.com.ua"))
+    else:
+        msg = await message.answer(text=_("Оберіть мову"), reply_markup=lang_change)
+        await db.message("BOT", 10001, msg.html_text, msg.date)
 
 
 @dp.message_handler(Text(equals=["🇷🇺 RU", "🇺🇸 EN", "🇺🇦 UA"]))

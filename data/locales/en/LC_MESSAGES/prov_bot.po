@@ -79,6 +79,10 @@ msgstr ""
 msgid "Кнопка для цього знизу"
 msgstr "Button for this at the bottom"
 
+#: handlers/users/start.py:70
+msgid "Треба натиснути на кнопку щоб передати номер телефону"
+msgstr "You need to press the button to send your phone number"
+
 #: handlers/users/start.py:64 handlers/users/start.py:91
 msgid ""
 "Ваш username: {}\n"

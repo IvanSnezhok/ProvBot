@@ -1,6 +1,13 @@
-FROM python:3.9
-COPY /requirements.txt /app/requirements.txt
-WORKDIR /app
-RUN pip install -r /app/requirements.txt
-COPY . /app
-CMD python /app/app.py
+FROM python:3.9-slim-bullseye
+
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Install dependencies:
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+# Run the application:
+COPY app.py .
+CMD ["python", "app.py"]

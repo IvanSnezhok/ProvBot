@@ -7,8 +7,3 @@ class Client(StatesGroup):
 
 class Request(StatesGroup):
     Quest = State()
-
-
-class Contract(StatesGroup):
-    get_id = State()
-    text = State()

@@ -4,6 +4,6 @@ aiomysql~=0.0.22
 asyncpg~=0.25.0
 pybabel
 asyncio~=3.4.3
-asyncpg
 aiohttp~=3.8.1
 APScheduler~=3.9.1
+transliterate~=1.10.2

@@ -1,0 +1,184 @@
+# English translations for PROJECT.
+# Copyright (C) 2021 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2021-06-21 07:24+0000\n"
+"PO-Revision-Date: 2021-04-30 23:01+0300\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: en\n"
+"Language-Team: en <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.9.1\n"
+
+#: handlers/users/echo.py:15
+msgid "Для взаємодії з ботом натисніть кнопку"
+msgstr "To interact with the bot, you need to press the button"
+
+#: handlers/users/lang_change.py:14
+msgid "Оберіть мову"
+msgstr "Select a language"
+
+#: handlers/users/lang_change.py:43
+msgid ""
+"Ви обрали {}\n"
+"Тепер можете перейти у головне меню"
+msgstr ""
+"You have chosen {}\n"
+"Now you can go to the main menu"
+
+#: handlers/users/pay_bill.py:20 handlers/users/pay_bill.py:28
+msgid "Зверніть увагу, що тут ви можете поповнити тільки свій особовий рахунок!"
+msgstr "Please note that you can only top up your personal account!"
+
+#: handlers/users/pay_bill.py:24 handlers/users/pay_bill.py:33
+msgid ""
+"Діє акція - поповни рахунок на 6 місяців одним платежем та отримуй 10% "
+"від суми поповнення!"
+msgstr ""
+"There is a special offer, replenish your account 6 months in advance and "
+"get 10% of the replenishment amount!"
+
+#: handlers/users/pay_bill.py:38
+msgid "Вибачте, але для вашого тарифу не передбачено поповнення рахунку через бот"
+msgstr "Sorry, but your tariff does not include a top-up via bot"
+
+#: handlers/users/pay_bill.py:59
+msgid "Користувач {} поповнив рахунок на {} {}"
+msgstr "User {} has deposited an account on {} {}"
+
+#: handlers/users/start.py:23
+msgid ""
+"Привіт, {}!\n"
+"Бот працює в тестовому режимі"
+msgstr ""
+"Hi, {}!\n"
+"The bot is running in test mode"
+
+#: handlers/users/start.py:35
+msgid "Оберіть зручну для Вас мову!"
+msgstr "Choose a language that is convenient for you!"
+
+#: handlers/users/start.py:47
+msgid ""
+"Ви обрали {}\n"
+"Тепер відправте, будь ласка, свій номер телефону, щоб знайти Ваш "
+"обліковий запис у нашому білінгу"
+msgstr ""
+"You choose {}\n"
+"Now please send your contact to find you in billing"
+
+#: handlers/users/start.py:51
+msgid "Кнопка для цього знизу"
+msgstr "Button for this at the bottom"
+
+#: handlers/users/start.py:70
+msgid "Треба натиснути на кнопку щоб передати номер телефону"
+msgstr "You need to press the button to send your phone number"
+
+#: handlers/users/start.py:64 handlers/users/start.py:91
+msgid ""
+"Ваш username: {}\n"
+"На вашому рахунку: {}\n"
+"Ваш номер договору: {}\n"
+"Ваше ПІБ: {}\n"
+"Стан послуги: {}\n"
+"Ваш пакет: {}"
+msgstr ""
+"Your username: {} \n"
+"In your account: {} \n"
+"Your contract number: {} \n"
+"Your full name: {} \n"
+"Service status: {} \n"
+"Your package: {}"
+
+#: handlers/users/start.py:75 handlers/users/start.py:102
+msgid ""
+"Вказаний номер телефону не знайдено у нашому білінгу\n"
+"Якщо ви бажаєте підключитися - залиште заявку на підключення натиснувши "
+"кнопку"
+msgstr ""
+"Wee are not registered in our billing\n"
+"If you want to connect, leave a request for connection by pressing the "
+"button\n"
+" "
+
+#: handlers/users/start.py:111
+msgid "Введіть ваше ПІБ, номер телефону та опишіть проблему"
+msgstr "Enter your full name, phone number and describe your problem"
+
+#: handlers/users/start.py:131 handlers/users/start.py:161
+msgid ""
+"Заявка в опрацюванні, чекайте зв'язку\n"
+"Можете повернутись у головне меню скориставшись кнопкою знизу"
+msgstr ""
+"Your application is being processed, we will contact you \n"
+"You can return to the main menu by clicking the button below"
+
+#: handlers/users/start.py:141
+msgid "Введіть ПІБ та номер телефону - ми зв'яжемось з Вами для підключення"
+msgstr ""
+"Enter your full name and phone number, we will contact you to discuss "
+"your connection \n"
+
+#: handlers/users/time_pay.py:14
+msgid ""
+"Доступ в Інтернет розблоковано на 24 години!\n"
+"Рахунок поповнено на {} грн на 24 години! Тепер можете повернутись у "
+"головне меню"
+msgstr ""
+"Internet access is unlocked for 24 hours!\n"
+"Account replenished by {} UAH for 24 hours! Now you can return tomain menu"
+
+#: handlers/users/time_pay.py:19
+msgid ""
+"Ви не можете використати тимчасовий платіж!\n"
+"Користуватись тимчасовим платежем можна раз на місяць!"
+msgstr ""
+"You cannot make a temporary payment now!\n"
+"You can only use the temporary payment once a month!"
+
+msgid "Поповнити рахунок"
+msgstr "Top up account"
+
+msgid "Ваш рахунок поповнено на {} {}!"
+msgstr "Your account has been credited to {} {}!"
+
+msgid "Головне меню"
+msgstr "Main menu"
+
+msgid "Повідомити про проблему"
+msgstr "Report an issue"
+
+msgid "Залишити заявку на підключення"
+msgstr "Leave a request for connection"
+
+msgid "Змінити мову"
+msgstr "Change the language"
+
+msgid "Тимчасовий платіж"
+msgstr "Temporary payment"
+
+msgid "@infoaura_bot - бот мережі інтернет-провайдера Інфоаура.\n"
+       "Бот призначений для доступного управлінням послугами, поповнення рахунку і виклику фахівця для вирішення локальних проблем Клієнта.\n"
+       "Пропозиції та зауваження по роботі бота просимо писати на email: bot@infoaura.com.ua."
+msgstr "@infoaura_bot is the bot of the network provider Infoaura.\n"
+        "The bot is designed to be accessible to service management, account replenishment and call a specialist to solve local problems of the Client.\n"
+        "Suggestions and comments on the work of the bot, please write to email: bot@infoaura.com.ua."
+
+msgid "Увімкнено"
+msgstr "Enabled"
+
+msgid "Вимкнено"
+msgstr "Off"
+
+#: keyboards/default/buttons.py:7
+msgid "Відправити номер телефону"
+msgstr "Send phone number"

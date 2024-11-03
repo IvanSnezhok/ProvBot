@@ -8,3 +8,4 @@ aiohttp~=3.9.2
 APScheduler~=3.9.1
 transliterate~=1.10.2
 pytz==2021.1
+requests~=2.31.0

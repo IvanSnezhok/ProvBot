@@ -9,6 +9,7 @@ from utils.db_api import database
 from utils.misc.debt_notification import schedule_debt_notification
 from utils.misc.sms_message import send_message_sms
 from utils.notify_admins import on_startup_notify, on_shutdown_notify
+from middlewares.logging import LoggingMiddleware
 
 
 async def on_startup(dispatcher):
@@ -33,6 +34,7 @@ async def on_startup(dispatcher):
     scheduler.add_job(send_message_sms, 'interval', minutes=3)
     schedule_debt_notification(scheduler)
     scheduler.start()
+    dp.middleware.setup(LoggingMiddleware())
 
 
 if __name__ == '__main__':

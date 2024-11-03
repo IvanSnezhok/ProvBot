@@ -20,7 +20,7 @@ from utils.misc.find_in_bill import find
 
 @dp.message_handler(CommandStart())
 async def bot_start(message: types.Message):
-    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
+    
     await message.answer(text=_("Привіт, {}!\n"
                                 "Бот працює в тестовому режимі").format(message.from_user.full_name),
                          reply_markup=ReplyKeyboardRemove())
@@ -40,25 +40,24 @@ async def bot_start(message: types.Message):
 
 @dp.message_handler(CommandHelp())
 async def help_message(message: types.Message):
-    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
+    
     msg = await message.answer(
         text=_("@infoaura_bot - бот мережі інтернет-провайдера Інфоаура.\n"
                "Бот призначений для доступного управлінням послугами, поповнення рахунку і виклику фахівця для вирішення локальних проблем Клієнта.\n"
                "Пропозиції та зауваження по роботі бота просимо писати на email: bot@infoaura.com.ua."),
         reply_markup=return_button)
-    await db.message("BOT", 10001, msg.html_text, msg.date)
+    
 
 
 @dp.message_handler(state='get_phone')
 async def get_phone_state(message: types.Message):
     text = _("Треба натиснути на кнопку щоб передати номер телефону")
     await message.answer(text=text, reply_markup=tel_button)
-    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
+    
 
 
 @dp.callback_query_handler(start_callback.filter(lang=["RU", "UA", "EN"]))
 async def lang_reply(call: CallbackQuery, state: FSMContext):
-    await db.message(call.from_user.full_name, call.from_user.id, call.message.text, call.message.date)
     await db.set_lang(call.data[7:].lower(), call.from_user.id)
     await call.answer()
     msg = await call.message.edit_text(
@@ -67,17 +66,17 @@ async def lang_reply(call: CallbackQuery, state: FSMContext):
             locale=call.data[7:].lower()).format(
             call.data[7:])
     )
-    await db.message("BOT", 10001, msg.html_text, msg.date)
+    
     msg1 = await call.message.answer(text=_("Кнопка для цього знизу", locale=call.data[7:].lower()),
                                      reply_markup=tel_button)
-    await db.message("BOT", 10001, msg1.html_text, msg1.date)
+    
     await state.set_state("get_phone")
 
 
 @dp.message_handler(content_types=types.ContentType.CONTACT, state="get_phone")
 async def ua_tel_get(message: types.Message, state: FSMContext):
     await state.finish()
-    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
+    
     tel = message.contact.phone_number
     tel = format_number(tel)
     await db.update_phone_number(tel, message.from_user.id)
@@ -109,7 +108,7 @@ async def ua_tel_get(message: types.Message, state: FSMContext):
                                               "Ваш пакет: {}").format(
                 database.data[0], database.data[1], database.data[2], database.data[3], net_on, database.data[5]),
                 reply_markup=client_request)
-            await db.message("BOT", 10001, msg.html_text, msg.date)
+            
 
         else:
             msg = await message.answer(text=_("Ваш username: {}\n"
@@ -120,21 +119,20 @@ async def ua_tel_get(message: types.Message, state: FSMContext):
                                               "Ваш пакет: {}").format(
                 database.data[0], database.data[1], database.data[2], database.data[3], net_off, database.data[5]),
                 reply_markup=client_request)
-            await db.message("BOT", 10001, msg.html_text, msg.date)
+            
 
     else:
         msg = await message.answer(
             text=_("Вказаний номер телефону не знайдено у нашому білінгу\n"
                    "Якщо ви бажаєте підключитися - залиште заявку на підключення натиснувши кнопку"),
             reply_markup=unknown_request_button)
-        await db.message("BOT", 10001, msg.html_text, msg.date)
+        
 
 
 @dp.callback_query_handler(Text(equals=['return_main']), state='*')
 async def call_main_menu(call: CallbackQuery, state: FSMContext):
     await call.answer()
     await state.finish()
-    await db.message(call.from_user.full_name, call.from_user.id, call.message.text, call.message.date)
     tel = await db.select_tel(user_id=call.from_user.id)
     await database.search_query(tel)
     try:
@@ -161,7 +159,7 @@ async def call_main_menu(call: CallbackQuery, state: FSMContext):
                                                     "Ваш пакет: {}").format(
                         database.data[0], database.data[1], database.data[2], database.data[3], net_on, database.data[5]),
                         reply_markup=client_request)
-                await db.message("BOT", 10001, msg.html_text, msg.date)
+                
             else:
                 msg = await call.message.answer(text=_("Ваш username: {}\n"
                                                     "На вашому рахунку: {}\n"
@@ -171,7 +169,7 @@ async def call_main_menu(call: CallbackQuery, state: FSMContext):
                                                     "Ваш пакет: {}").format(
                         database.data[0], database.data[1], database.data[2], database.data[3], net_on, database.data[5]),
                         reply_markup=client_request)
-                await db.message("BOT", 10001, msg.html_text, msg.date)
+                
         else:
             if await db.is_alarm(call.from_user.id):
                 message_alarm = await db.get_alarm_message(int(database.data[6]))
@@ -186,7 +184,7 @@ async def call_main_menu(call: CallbackQuery, state: FSMContext):
                                                     "Ваш пакет: {}").format(
                         database.data[0], database.data[1], database.data[2], database.data[3], net_off, database.data[5]),
                         reply_markup=client_request)
-                await db.message("BOT", 10001, msg.html_text, msg.date)
+                
             else:
                 msg = await call.message.answer(text=_("Ваш username: {}\n"
                                                     "На вашому рахунку: {}\n"
@@ -196,18 +194,18 @@ async def call_main_menu(call: CallbackQuery, state: FSMContext):
                                                     "Ваш пакет: {}").format(
                         database.data[0], database.data[1], database.data[2], database.data[3], net_off, database.data[5]),
                         reply_markup=client_request)
-                await db.message("BOT", 10001, msg.html_text, msg.date)
+                
     else:
         msg = await call.message.answer(
                 text=_("Вказаний номер телефону не знайдено у нашому білінгу\n"
                     "Якщо ви бажаєте підключитися - залиште заявку на підключення натиснувши кнопку"),
                 reply_markup=unknown_request_button)
-        await db.message("BOT", 10001, msg.html_text, msg.date)
+        
 
 @dp.message_handler(Text(equals=["Головне меню", "Главное меню", "Main menu"]), state="*")
 async def main_menu(message: types.Message, state: FSMContext):
         await state.finish()
-        await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
+        
         tel = await db.select_tel(user_id=message.from_user.id)
         await database.search_query(tel)
         try:
@@ -234,7 +232,7 @@ async def main_menu(message: types.Message, state: FSMContext):
                                                     "Ваш пакет: {}").format(
                         database.data[0], database.data[1], database.data[2], database.data[3], net_on, database.data[5]),
                         reply_markup=client_request)
-                    await db.message("BOT", 10001, msg.html_text, msg.date)
+                    
                 else:
                     msg = await message.answer(text=_("Ваш username: {}\n"
                                                     "На вашому рахунку: {}\n"
@@ -244,7 +242,7 @@ async def main_menu(message: types.Message, state: FSMContext):
                                                     "Ваш пакет: {}").format(
                         database.data[0], database.data[1], database.data[2], database.data[3], net_on, database.data[5]),
                         reply_markup=client_request)
-                    await db.message("BOT", 10001, msg.html_text, msg.date)
+                    
             else:
                 if await db.is_alarm(message.from_user.id):
                     message_alarm = await db.get_alarm_message(int(database.data[6]))
@@ -259,7 +257,7 @@ async def main_menu(message: types.Message, state: FSMContext):
                                                     "Ваш пакет: {}").format(
                         database.data[0], database.data[1], database.data[2], database.data[3], net_off, database.data[5]),
                         reply_markup=client_request)
-                    await db.message("BOT", 10001, msg.html_text, msg.date)
+                    
                 else:
                     msg = await message.answer(text=_("Ваш username: {}\n"
                                                     "На вашому рахунку: {}\n"
@@ -269,20 +267,20 @@ async def main_menu(message: types.Message, state: FSMContext):
                                                     "Ваш пакет: {}").format(
                         database.data[0], database.data[1], database.data[2], database.data[3], net_off, database.data[5]),
                         reply_markup=client_request)
-                    await db.message("BOT", 10001, msg.html_text, msg.date)
+                    
         else:
             msg = await message.answer(
                 text=_("Вказаний номер телефону не знайдено у нашому білінгу\n"
                     "Якщо ви бажаєте підключитися - залиште заявку на підключення натиснувши кнопку"),
                 reply_markup=unknown_request_button)
-            await db.message("BOT", 10001, msg.html_text, msg.date)
+            
 
         
 
 
 @dp.message_handler(Text(equals=__("Повідомити про проблему")))
 async def request_for_ts(message: types.Message):
-    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
+    
     ban = await db.get_ban()
     tel = await db.select_tel(message.from_user.id)
     if await db.is_alarm(message.from_user.id):
@@ -298,13 +296,13 @@ async def request_for_ts(message: types.Message):
     else:
         msg = await message.answer(text=_("Введіть ваше ПІБ, номер телефону та опишіть проблему"),
                                    reply_markup=ReplyKeyboardRemove())
-        await db.message("BOT", 10001, msg.html_text, msg.date)
+        
         await Request.first()
 
 
 @dp.message_handler(state=Request.Quest)
 async def tech_support_message(message: types.Message, state: FSMContext):
-    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
+    
     answer = message.text
     user = await db.select_user_by_id(message.from_user.id)
     async with state.proxy() as data:
@@ -320,8 +318,8 @@ async def tech_support_message(message: types.Message, state: FSMContext):
                                                         f"\nНомер договору: {user[6]}"
                                                         f"\nТелеграм ІД: {user[3]}",
                                                  reply_markup=answer_reply)
-                await db.message("BOT", 10001, msg1.html_text, msg1.date)
-                await db.message("BOT", 10001, msg.html_text, msg.date)
+                
+                
 
             except Exception as err:
                 logging.exception(err)
@@ -329,12 +327,12 @@ async def tech_support_message(message: types.Message, state: FSMContext):
     msg = await message.answer(text=_("Заявка в опрацюванні, чекайте зв'язку\n"
                                       "Можете повернутись у головне меню скориставшись кнопкою знизу"),
                                reply_markup=return_button)
-    await db.message("BOT", 10001, msg.html_text, msg.date)
+    
 
 
 @dp.message_handler(Text(equals=__("Залишити заявку на підключення")))
 async def get_client(message: types.Message):
-    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
+    
     ban = await db.get_ban()
     if message.from_user.id in ban:
         await message.answer(
@@ -343,13 +341,13 @@ async def get_client(message: types.Message):
         msg = await message.answer(
             text=_("Введіть ПІБ та номер телефону - ми зв'яжемось з Вами для підключення"),
             reply_markup=ReplyKeyboardRemove())
-        await db.message("BOT", 10001, msg.html_text, msg.date)
+        
         await Client.first()
 
 
 @dp.message_handler(Text(equals=__("Підключити друга")))
 async def connect_friend(message: types.Message):
-    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
+    
     ban = await db.get_ban()
     if message.from_user.id in ban:
         await message.answer(
@@ -359,12 +357,12 @@ async def connect_friend(message: types.Message):
         user_data = await find(contract=contract[0][0])
         text = __("""<b>Підключіть друга до нашої мережі інтернет</b> - отримайте на свій рахунок суму вартості Вашого поточного тарифного плану. При оформленні заявки на підключення, особі потрібно зазначити реквізити Вашого підключення (на вибір: номер договору {} або адресу підключення {}). Після фактичного підключення «Друга» до нашої мережі Ваш особовий рахунок буде автоматично поповнено на суму вартості Вашого поточного тарифного плану. При підключенні також діє акція «Перехід» """)
         msg = await message.answer(text.format(user_data['contract'], user_data['address']), reply_markup=return_button)
-        await db.message("BOT", 10001, msg.html_text, msg.date)
+        
 
 
 @dp.message_handler(state=Client.Quest)
 async def request_client(message: types.Message, state: FSMContext):
-    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
+    
     answer = message.text
     user = await db.select_user_by_id(message.from_user.id)
     async with state.proxy() as data:
@@ -380,8 +378,8 @@ async def request_client(message: types.Message, state: FSMContext):
                                                         f"\nНомер договору: {user[6]}"
                                                         f"\nТелеграм ІД: {user[3]}",
                                                  reply_markup=answer_reply)
-                await db.message("BOT", 10001, msg1.html_text, msg1.date)
-                await db.message("BOT", 10001, msg.html_text, msg.date)
+                
+                
 
             except Exception as err:
                 logging.exception(err)
@@ -389,4 +387,4 @@ async def request_client(message: types.Message, state: FSMContext):
     msg = await message.answer(text=_("Заявка в опрацюванні, чекайте зв'язку\n"
                                       "Можете повернутись у головне меню скориставшись кнопкою знизу"),
                                reply_markup=return_button)
-    await db.message("BOT", 10001, msg.html_text, msg.date)
+    

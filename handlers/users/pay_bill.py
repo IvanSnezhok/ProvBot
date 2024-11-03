@@ -21,7 +21,7 @@ from utils.misc.pay_load import Pay
 
 @dp.message_handler(Text(__("Поповнити рахунок")), state="*")
 async def contract_pay(message: types.Message, state: FSMContext):
-    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
+    
     await database.search_query(tel=await db.select_tel(user_id=message.from_user.id))
     ban = await db.get_ban()
     print(ban)
@@ -30,13 +30,13 @@ async def contract_pay(message: types.Message, state: FSMContext):
                                "support@infoaura.com.ua"))
     elif database.data[5] == 'СТАНДАРТ(180грн).':
         msg = await message.answer(text=_("Зверніть увагу, що тут ви можете поповнити тільки свій особовий рахунок!"))
-        await db.message("BOT", 10001, msg.html_text, msg.date)
+        
         invoice_pay = P180.generate_invoice()
         await state.update_data({'bill_id_p180': invoice_pay[' start_parameter']})
         await bot.send_invoice(message.from_user.id, **invoice_pay, payload=180)
         msg1 = await message.answer(
             text=_("Діє акція - поповни рахунок на 6 місяців одним платежем та отримуй 10% від суми поповнення!"))
-        await db.message("BOT", 10001, msg1.html_text, msg1.date)
+        
         invoice_pay = P1080.generate_invoice()
         await state.update_data({'bill_id_p1080': invoice_pay[' start_parameter']})
         await bot.send_invoice(message.from_user.id, **invoice_pay, payload=1080)
@@ -45,25 +45,25 @@ async def contract_pay(message: types.Message, state: FSMContext):
         invoice_pay = P200.generate_invoice()
         await state.update_data({'bill_id_p200': invoice_pay[' start_parameter']})
         await bot.send_invoice(message.from_user.id, **invoice_pay, payload=200)
-        await db.message("BOT", 10001, msg.html_text, msg.date)
+        
         msg1 = await message.answer(
             text=_("Діє акція - поповни рахунок на 6 місяців одним платежем та отримуй 10% від суми поповнення!"))
         invoice_pay = P1200.generate_invoice()
         await state.update_data({'bill_id_p1200': invoice_pay[' start_parameter']})
         await bot.send_invoice(message.from_user.id, **invoice_pay, payload=1200)
-        await db.message("BOT", 10001, msg1.html_text, msg1.date)
+        
     elif database.data[5] == 'PON-300(350грн)':
         msg = await message.answer(text=_("Зверніть увагу, що тут ви можете поповнити тільки свій особовий рахунок!"))
         invoice_pay = P350.generate_invoice()
         await state.update_data({'bill_id_p350': invoice_pay[' start_parameter']})
         await bot.send_invoice(message.from_user.id, **invoice_pay, payload=350)
-        await db.message("BOT", 10001, msg.html_text, msg.date)
+        
         msg1 = await message.answer(
             text=_("Діє акція - поповни рахунок на 6 місяців одним платежем та отримуй 10% від суми поповнення!"))
         invoice_pay = P2100.generate_invoice()
         await state.update_data({'bill_id_p2100': invoice_pay[' start_parameter']})
         await bot.send_invoice(message.from_user.id, **invoice_pay, payload=2100)
-        await db.message("BOT", 10001, msg1.html_text, msg1.date)
+        
     else:
         msg = await message.answer(text=_("Для поповнення рахунку введіть сумму поповненя!\n"
                                           "Наприклад:\n"
@@ -71,22 +71,22 @@ async def contract_pay(message: types.Message, state: FSMContext):
                                           "500\n"),
                                    reply_markup=return_button)
         await state.set_state('invoice_payload')
-        await db.message("BOT", 10001, msg.html_text, msg.date)
+        
 
 
 @dp.message_handler(state='invoice_payload')
 async def get_invoice_payload(message: types.Message, state: FSMContext):
-    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
+    
     msg = await message.answer(text=_("Введіть номер договору який хочете поповнити!"))
     await state.set_data({'payload': message.text})
     await state.set_state('invoice_contract')
-    await db.message("BOT", 10001, msg.html_text, msg.date)
+    
 
 
 @dp.message_handler(state='invoice_contract')
 @dp.message_handler(state='invalid_payload')
 async def get_invoice_contract(message: types.Message, state: FSMContext):
-    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
+    
     data = await state.get_data()
     if await state.get_state() == 'invoice_contract':
         data = await state.get_data()
@@ -120,12 +120,12 @@ async def get_invoice_contract(message: types.Message, state: FSMContext):
                 msg = await message.answer('Мінімальна сумма поповнення від 0.1$ в гривнях за курсом НБУ\n'
                                            'Введіть іншу сумму поповнення або можете повернутися у головне меню',
                                            reply_markup=return_button)
-                await db.message("BOT", 10001, msg.html_text, msg.date)
+                
                 await state.set_state('invalid_payload')
         else:
             msg = await message.answer('Невірно вказаний номер договору для поповнення\n',
                                        reply_markup=return_button)
-            await db.message("BOT", 10001, msg.html_text, msg.date)
+            
     else:
         payload = message.text
         amount_pay = int(payload) * 100
@@ -149,7 +149,7 @@ async def get_invoice_contract(message: types.Message, state: FSMContext):
             msg = await message.answer('Мінімальна сумма поповнення від 0.1$ в гривнях за курсом НБУ\n'
                                        'Введіть іншу сумму поповнення або можете повернутися у головне меню',
                                        reply_markup=return_button)
-            await db.message("BOT", 10001, msg.html_text, msg.date)
+            
             await state.set_state('invalid_payload')
 
 
@@ -162,7 +162,7 @@ async def process_pre_checkout(query: types.PreCheckoutQuery):
 
 @dp.message_handler(content_types=ContentType.SUCCESSFUL_PAYMENT, state="*")
 async def process_successful_pay(message: types.Message, state: FSMContext):
-    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
+    
     data = await state.get_data()
     try:
         if data['contract']:
@@ -180,7 +180,7 @@ async def process_successful_pay(message: types.Message, state: FSMContext):
                                                            "на {} {}").format(
                                                         contract, payload, message.successful_payment.currency)
                                                     )
-                    await db.message("BOT", 10001, msg.html_text, msg.date)
+                    
                 except Exception as err:
                     logging.exception(err)
         else:
@@ -216,14 +216,13 @@ async def process_successful_pay(message: types.Message, state: FSMContext):
                                         text=__("Ваш рахунок поповнено на {} {}!").format(
                                             payload, message.successful_payment.currency),
                                         reply_markup=return_button)
-        await db.message("BOT", 10001, msg.html_text, msg.date)
+        
     except Exception as e:
         logging.error(f"Помилка при обробці платежу: {e}")
         error_msg = await dp.bot.send_message(chat_id=message.from_user.id,
                                               text=__(
                                                   "На жаль, виникла помилка при обробці платежу. Будь ласка, зверніться до служби підтримки."),
                                               reply_markup=return_button)
-        await db.message("BOT", 10001, error_msg.html_text, error_msg.date)
         for admin in ADMINS:
             await dp.bot.send_message(chat_id=admin,
                                       text=f"Помилка при обробці платежу для користувача {message.from_user.id}: {e}")

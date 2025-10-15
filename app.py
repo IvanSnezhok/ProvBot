@@ -6,6 +6,7 @@ from aiogram import executor, Dispatcher
 from loader import dp, db, scheduler
 import middlewares, filters, handlers
 from utils.db_api import database
+from utils.misc.debt_notification import schedule_debt_notification
 from utils.misc.sms_message import send_message_sms
 from utils.notify_admins import on_startup_notify, on_shutdown_notify
 
@@ -22,10 +23,15 @@ async def on_startup(dispatcher):
     await db.create_table_alarm()
     logging.info("Создаем таблицу оплат")
     await db.create_table_bill_check()
+    logging.info("Створюємо таблицю чатів")
+    await db.create_table_chats()
+    logging.info("Создаем таблицу кликов")
+    await db.create_table_user_clicks()
     logging.info("Включаем уведомления по таймеру")
     logging.info("Готово.")
     await on_startup_notify(dispatcher)
     scheduler.add_job(send_message_sms, 'interval', minutes=3)
+    schedule_debt_notification(scheduler)
     scheduler.start()
 
 

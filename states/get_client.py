@@ -7,3 +7,8 @@ class Client(StatesGroup):
 
 class Request(StatesGroup):
     Quest = State()
+
+
+class SupportChat(StatesGroup):
+    WaitingForSupport = State()
+    Chatting = State()

@@ -32,7 +32,11 @@ client_request = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
         KeyboardButton(text=__("Змінити мову"))
     ],
     [
-        KeyboardButton(text=__("Повідомити про проблему"))
+        KeyboardButton(text=__("Повідомити про проблему")),
+        KeyboardButton(text=__("Підключити друга"))
+    ],
+    [
+        KeyboardButton(text=__("🛒 Магазин"))
     ]
 ], one_time_keyboard=True)
 

@@ -1,3 +1,5 @@
+import re
+
 import aiohttp
 import transliterate
 from aiogram import types
@@ -32,6 +34,7 @@ async def admin_panel(message: types.Message, state: FSMContext):
     if result:
         if type(result) is dict:
             await message.answer(text=await format_text_account_admin(result), reply_markup=admin_account_menu)
+            await state.set_data({"account": result['contract']})
         else:
             msg = await message.answer("Користувача не знайдено\n"
                                        "Панель адміністратора", reply_markup=admin_keyboard)
@@ -39,6 +42,7 @@ async def admin_panel(message: types.Message, state: FSMContext):
     else:
         msg = await message.answer("Панель адміністратора", reply_markup=admin_keyboard)
         await db.message(message.from_user.full_name, message.from_user.id, msg.html_text, msg.date)
+
 
 @dp.callback_query_handler(IDFilter(ADMINS), text="back", state='*')
 async def admin_panel(call: types.CallbackQuery, state: FSMContext):
@@ -61,6 +65,16 @@ async def admin_answer(call: types.CallbackQuery, state: FSMContext):
                               f" для відправлення користувачу {user_id}", reply_markup=back)
 
 
+@dp.callback_query_handler(IDFilter(ADMINS), state='*', text='message_history')
+async def message_history_start(call: types.CallbackQuery, state: FSMContext):
+    await call.answer()
+    await db.message(call.from_user.full_name, call.from_user.id, call.message.text, call.message.date)
+    msg = await call.message.answer(text='Напишіть кількість останніх повідомлень що бажаєте передивитися\n'
+                                         'Стандартна кількість 10 повідомлень')
+    await db.message("BOT", 10001, msg.html_text, msg.date)
+    await state.set_state('message_history')
+
+
 @dp.message_handler(IDFilter(ADMINS), state='answer', content_types=['text', 'photo', 'document', 'video'])
 async def admin_answer_text(message: types.Message, state: FSMContext):
     user_id = await state.get_data()
@@ -69,20 +83,21 @@ async def admin_answer_text(message: types.Message, state: FSMContext):
     if message.content_type == "text":
         await dp.bot.send_message(user_id['user_id'], message.text)
         for admin in ADMINS:
-            msg = await dp.bot.send_message(admin, "Повідомлення:\n" + message.text + "\nДо:\n" + str(user_id['user_id']),
-                                       reply_markup=back)
+            msg = await dp.bot.send_message(admin,
+                                            "Повідомлення:\n" + message.text + "\nДо:\n" + str(user_id['user_id']),
+                                            reply_markup=back)
             await db.message(message.from_user.full_name, message.from_user.id, msg.html_text, msg.date)
     elif message.content_type == "photo":
         await dp.bot.send_photo(user_id['user_id'], message.photo[-1].file_id)
         for admin in ADMINS:
             msg = await dp.bot.send_photo(admin, message.photo[-1].file_id, caption="До:\n" + str(user_id['user_id']),
-                                        reply_markup=back)
+                                          reply_markup=back)
             await db.message(message.from_user.full_name, message.from_user.id, msg.html_text, msg.date)
     elif message.content_type == "document":
         await dp.bot.send_document(user_id['user_id'], message.document.file_id)
         for admin in ADMINS:
             msg = await dp.bot.send_document(admin, message.document.file_id, caption="До:\n" + str(user_id['user_id']),
-                                            reply_markup=back)
+                                             reply_markup=back)
             await db.message(message.from_user.full_name, message.from_user.id, msg.html_text, msg.date)
     elif message.content_type == "video":
         await dp.bot.send_video(user_id['user_id'], message.video.file_id)
@@ -90,7 +105,6 @@ async def admin_answer_text(message: types.Message, state: FSMContext):
             msg = await dp.bot.send_video(admin, message.video.file_id, caption="До:\n" + str(user_id['user_id']),
                                           reply_markup=back)
             await db.message(message.from_user.full_name, message.from_user.id, msg.html_text, msg.date)
-
 
 
 @dp.callback_query_handler(IDFilter(ADMINS), text="admin_change_balance", state='*')
@@ -153,6 +167,7 @@ async def account_menu_handler(message: types.Message, state: FSMContext):
             result = await find(name=message.text)
         elif cur_state == 'search_address':
             result = await find(address=message.text.split(' '))
+
         if type(result) is dict:
             await message.answer(text=await format_text_account_admin(result), reply_markup=admin_account_menu)
             await state.set_data({"account": result['contract']})
@@ -185,18 +200,48 @@ async def account_menu_list(call: types.CallbackQuery, state: FSMContext):
     await db.message("BOT", 10001, msg.html_text, msg.date)
 
 
+@dp.message_handler(IDFilter(ADMINS), state='message_history')
+async def message_history_get(message: types.Message, state: FSMContext):
+    await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
+    contract = await state.get_data()
+    user_id = await db.select_user_id_by_contract(contract['account'])
+    messages = await db.get_message_history(user_id=user_id[0][0], message_count=int(message.text))
+    msg = await message.answer(f'Останні {message.text} повідомлень від {contract["account"]}')
+    print(messages)
+    for i in messages:
+        if i[0] is not None:
+            msg1 = await message.answer(i[0])
+            await db.message("BOT", 10001, msg1.html_text, msg1.date)
+        else:
+            msg2 = await message.answer('Пусте повідомлення (натискання на кнопку або відправка файлів)')
+            await db.message("BOT", 10001, msg2.html_text, msg2.date)
+    await db.message("BOT", 10001, msg.html_text, msg.date)
+    msg3 = await message.answer('Закінчення повідомлень', reply_markup=back)
+    await db.message("BOT", 10001, msg3.html_text, msg3.date)
+    await state.finish()
+
+
+
 @dp.callback_query_handler(IDFilter(ADMINS), text='admin_temporary_payment', state='*')
 async def admin_temporary_payment(call: types.CallbackQuery, state: FSMContext):
     await call.answer()
     await db.message(call.from_user.full_name, call.from_user.id, call.message.text, call.message.date)
-    account = await state.get_data()
-    account = account['account']
-    if await t_pay(account):
-        msg = await call.message.answer(text="Тимчасовий платіж увімкнений успішно для абонента " + account)
-    else:
-        msg = await call.message.answer(text="Тимчасовий платіж не вдалося ввімкнути для абонента " + account)
+    try:
+        account = await state.get_data()
+        account = account['account']
+        if await t_pay(account):
+            msg = await call.message.answer(text="Тимчасовий платіж увімкнений успішно для абонента " + account)
+        else:
+            msg = await call.message.answer(text="Тимчасовий платіж не вдалося ввімкнути для абонента " + account)
+    except KeyError:
+        contract = re.search(r'\b\d{8}\b', call.message.text)
+        if await t_pay(contract[0]):
+            msg = await call.message.answer(text="Тимчасовий платіж увімкнений успішно для абонента " + contract[0])
+        else:
+            msg = await call.message.answer(text="Тимчасовий платіж не вдалося ввімкнути для абонента " + contract[0])
     result = await find(contract=call.data[17:])
     msg1 = await call.message.answer(text=await format_text_account_admin(result), reply_markup=admin_account_menu)
+    await state.set_data({"account": result['contract']})
 
     await db.message("BOT", 10001, msg.html_text, msg.date)
     await db.message("BOT", 10001, msg1.html_text, msg1.date)
@@ -613,7 +658,6 @@ async def message_send_accept_sms(call: types.CallbackQuery, state: FSMContext):
         await state.finish()
 
 
-
 @dp.callback_query_handler(IDFilter(ADMINS), text='ban_account')
 async def ban_account(call: types.CallbackQuery, state: FSMContext):
     await db.message(call.from_user.full_name, call.from_user.id, call.message.text, call.message.date)
@@ -661,6 +705,7 @@ async def unban_id(message: types.Message, state: FSMContext):
     except Exception as e:
         await message.answer(f"Помилка: {e}", reply_markup=back)
     await state.finish()
+
 
 @dp.callback_query_handler(IDFilter(ADMINS), text='register_alarm')
 async def register_alarm(call: types.CallbackQuery, state: FSMContext):
@@ -733,7 +778,7 @@ async def redacting_alarm_state(call: types.CallbackQuery, state: FSMContext):
     await call.answer()
     records = await db.get_alarm()
     keyboard_alarms = InlineKeyboardMarkup(row_width=1)
-    txt= ''
+    txt = ''
     print(records)
     if not records:
         await call.message.edit_text("Аварій не знайдено", reply_markup=back_inline)
@@ -778,7 +823,6 @@ async def deleting_alarm(call: types.CallbackQuery, state: FSMContext):
     except Exception as e:
         await call.message.edit_text(f"Помилка: {e}", reply_markup=back_inline)
         await state.finish()
-
 
 
 @dp.message_handler(IDFilter(ADMINS), state="redact_alarm_message")

@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"name": "SSH FS - prov_bot",
+			"uri": "ssh://prov_bot/home/velebnost/Prov_botwithoutwebhook"
+		}
+	],
+	"settings": {
+		"sshfs.configs": [
+			{
+				"name": "prov_bot",
+				"root": "/home/velebnost/Prov_botwithoutwebhook",
+				"username": "velebnost",
+				"password": "133768",
+				"host": "193.105.41.132"
+			}
+		]
+	}
+}

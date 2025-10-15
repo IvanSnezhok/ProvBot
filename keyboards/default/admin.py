@@ -34,7 +34,8 @@ admin_account_menu = InlineKeyboardMarkup()
 admin_account_menu.add(
     InlineKeyboardButton(text='Змінити баланс', callback_data='admin_change_balance'),
     InlineKeyboardButton(text='Тимчасовий платіж', callback_data='admin_temporary_payment'),
-    InlineKeyboardButton(text='Змінити пакет', callback_data='admin_change_paket'))
+    InlineKeyboardButton(text='Змінити пакет', callback_data='admin_change_paket'),
+    InlineKeyboardButton(text='Історія повідомлень', callback_data='message_history'))
 
 search_choice = InlineKeyboardMarkup(row_width=2)
 search_choice.add(InlineKeyboardButton(text='Номер договору', callback_data='search_contract'),
@@ -56,7 +57,9 @@ grp_choice.add(
     InlineKeyboardButton(text='"WiFi Киев"', callback_data='10'),
     InlineKeyboardButton(text='"WiFi Савенка"', callback_data='11'),
     InlineKeyboardButton(text='"Абоненты Киев"', callback_data='12'),
-    InlineKeyboardButton(text='"Куренівка GreyIPs"', callback_data='13'))
+    InlineKeyboardButton(text='"Куренівка GreyIPs"', callback_data='13'),
+    InlineKeyboardButton(text='"Поділ GreyIPs"', callback_data='14'),
+    InlineKeyboardButton(text='"Катюжанка GreyIPs"', callback_data='15'))
 
 redact_alarm = InlineKeyboardMarkup(row_width=2)
 redact_alarm.add(

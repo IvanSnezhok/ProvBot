@@ -1,5 +1,6 @@
 import logging
 import random
+import re
 import uuid
 
 import aiogram.utils.exceptions
@@ -14,6 +15,7 @@ from keyboards.default.buttons import return_button
 from loader import dp, db, bot
 from middlewares import _, __
 from utils.db_api import database
+from utils.db_api.database import check_contract_exists
 from utils.misc.pay_load import Pay
 
 
@@ -93,31 +95,63 @@ async def get_invoice_contract(message: types.Message, state: FSMContext):
         random_id = f"create_invoice_{amount_pay}_{uuid.uuid4()}"
         await state.update_data({'contract': message.text, 'bill_id': random_id})
         contract = message.text
+        if re.match(r'^\d{8}$', contract) and await check_contract_exists(contract):
+            invoice = Pay(
+                title=f"Поповнення на {payload} грн",
+                description=f"Поповнення рахунку {contract} на {payload} гривень",
+                currency="UAH",
+                prices=[
+                    LabeledPrice(
+                        label=f"Поповнення рахунку {contract}",
+                        amount=amount_pay
+                    )
+                ],
+                start_parameter=random_id
+            )
+            for admin in ADMINS:
+                await dp.bot.send_message(admin,
+                                          f"Створено інвойс для користувача {message.from_user.id}:\n"
+                                          f"Договір: {contract}\n"
+                                          f"Сума: {payload} грн\n"
+                                          f"ID інвойсу: {random_id}")
+            try:
+                await bot.send_invoice(message.from_user.id, **invoice.generate_invoice(), payload=str(amount_pay))
+            except aiogram.utils.exceptions.CurrencyTotalAmountInvalid:
+                msg = await message.answer('Мінімальна сумма поповнення від 0.1$ в гривнях за курсом НБУ\n'
+                                           'Введіть іншу сумму поповнення або можете повернутися у головне меню',
+                                           reply_markup=return_button)
+                await db.message("BOT", 10001, msg.html_text, msg.date)
+                await state.set_state('invalid_payload')
+        else:
+            msg = await message.answer('Невірно вказаний номер договору для поповнення\n',
+                                       reply_markup=return_button)
+            await db.message("BOT", 10001, msg.html_text, msg.date)
     else:
         payload = message.text
         amount_pay = int(payload) * 100
         random_id = f'{data["bill_id"]}'
         contract = f'{data["contract"]}'
-    invoice = Pay(
-        title=f"Поповнення на {payload} грн",
-        description=f"Поповнення рахунку {contract} на {payload} гривень",
-        currency="UAH",
-        prices=[
-            LabeledPrice(
-                label=f"Поповнення рахунку {contract}",
-                amount=amount_pay
-            )
-        ],
-        start_parameter=random_id
-    )
-    try:
-        await bot.send_invoice(message.from_user.id, **invoice.generate_invoice(), payload=str(amount_pay))
-    except aiogram.utils.exceptions.CurrencyTotalAmountInvalid:
-        msg = await message.answer('Мінімальна сумма поповнення від 0.1$ в гривнях за курсом НБУ\n'
-                                   'Введіть іншу сумму поповнення або можете повернутися у головне меню',
-                                   reply_markup=return_button)
-        await db.message("BOT", 10001, msg.html_text, msg.date)
-        await state.set_state('invalid_payload')
+        invoice = Pay(
+            title=f"Поповнення на {payload} грн",
+            description=f"Поповнення рахунку {contract} на {payload} гривень",
+            currency="UAH",
+            prices=[
+                LabeledPrice(
+                    label=f"Поповнення рахунку {contract}",
+                    amount=amount_pay
+                )
+            ],
+            start_parameter=random_id
+        )
+        try:
+            await bot.send_invoice(message.from_user.id, **invoice.generate_invoice(), payload=str(amount_pay))
+        except aiogram.utils.exceptions.CurrencyTotalAmountInvalid:
+            msg = await message.answer('Мінімальна сумма поповнення від 0.1$ в гривнях за курсом НБУ\n'
+                                       'Введіть іншу сумму поповнення або можете повернутися у головне меню',
+                                       reply_markup=return_button)
+            await db.message("BOT", 10001, msg.html_text, msg.date)
+            await state.set_state('invalid_payload')
+
 
 
 @dp.pre_checkout_query_handler(state='*')
@@ -130,28 +164,29 @@ async def process_pre_checkout(query: types.PreCheckoutQuery):
 async def process_successful_pay(message: types.Message, state: FSMContext):
     await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
     data = await state.get_data()
-    if data['contract']:
-        data = await state.get_data()
-        payload = data['payload']
-        contract = data['contract']
-        bill_id = data['bill_id']
-        await db.add_bill(bill_id, message.from_user.id, message.date, message.from_user.username, contract, payload)
-        await database.pay_balance(contract=contract, payload=payload)
-        for admin in ADMINS:
-            try:
-                msg = await dp.bot.send_message(chat_id=admin,
-                                                text=_("Користувач {} поповнив рахунок "
-                                                       "на {} {}").format(
-                                                    contract, payload, message.successful_payment.currency)
-                                                )
-                await db.message("BOT", 10001, msg.html_text, msg.date)
-            except Exception as err:
-                logging.exception(err)
-
-    else:
-        contract = await db.select_contract(message.from_user.id)
-        contract = contract[0]
-        payload = message.successful_payment.total_amount // 100
+    try:
+        if data['contract']:
+            data = await state.get_data()
+            payload = data['payload']
+            contract = data['contract']
+            bill_id = data['bill_id']
+            await db.add_bill(bill_id, message.from_user.id, message.date, message.from_user.username, contract,
+                              payload)
+            await database.pay_balance(contract=contract, payload=payload)
+            for admin in ADMINS:
+                try:
+                    msg = await dp.bot.send_message(chat_id=admin,
+                                                    text=_("Користувач {} успішно поповнив рахунок "
+                                                           "на {} {}").format(
+                                                        contract, payload, message.successful_payment.currency)
+                                                    )
+                    await db.message("BOT", 10001, msg.html_text, msg.date)
+                except Exception as err:
+                    logging.exception(err)
+        else:
+            contract = await db.select_contract(message.from_user.id)
+            contract = contract[0]
+            payload = message.successful_payment.total_amount // 100
         if payload == 180:
             bill_id = data['bill_id_p180']
             await db.add_bill(
@@ -177,18 +212,18 @@ async def process_successful_pay(message: types.Message, state: FSMContext):
             await db.add_bill(
                 bill_id, message.from_user.id, message.date, message.from_user.username, contract, payload)
         await database.pay_balance(contract=contract[0], payload=payload)
+        msg = await dp.bot.send_message(chat_id=message.from_user.id,
+                                        text=__("Ваш рахунок поповнено на {} {}!").format(
+                                            payload, message.successful_payment.currency),
+                                        reply_markup=return_button)
+        await db.message("BOT", 10001, msg.html_text, msg.date)
+    except Exception as e:
+        logging.error(f"Помилка при обробці платежу: {e}")
+        error_msg = await dp.bot.send_message(chat_id=message.from_user.id,
+                                              text=__(
+                                                  "На жаль, виникла помилка при обробці платежу. Будь ласка, зверніться до служби підтримки."),
+                                              reply_markup=return_button)
+        await db.message("BOT", 10001, error_msg.html_text, error_msg.date)
         for admin in ADMINS:
-            try:
-                msg = await dp.bot.send_message(chat_id=admin,
-                                                text=_("Користувач {} поповнив рахунок "
-                                                       "на {} {}").format(
-                                                    contract[0], payload, message.successful_payment.currency)
-                                                )
-                await db.message("BOT", 10001, msg.html_text, msg.date)
-            except Exception as err:
-                logging.exception(err)
-    msg = await dp.bot.send_message(chat_id=message.from_user.id,
-                                    text=__("Ваш рахунок поповнено на {} {}!").format(
-                                        payload, message.successful_payment.currency),
-                                    reply_markup=return_button)
-    await db.message("BOT", 10001, msg.html_text, msg.date)
+            await dp.bot.send_message(chat_id=admin,
+                                      text=f"Помилка при обробці платежу для користувача {message.from_user.id}: {e}")

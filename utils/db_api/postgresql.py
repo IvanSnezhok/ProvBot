@@ -90,6 +90,43 @@ class Database:
         """
         await self.execute(sql, execute=True)
 
+    async def create_table_chats(self):
+        sql = """
+        CREATE TABLE IF NOT EXISTS chats (
+            id SERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL,
+            admin_id BIGINT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            closed_at TIMESTAMP,
+            status VARCHAR(255) NULL,
+            rating INTEGER NULL
+        );
+        """
+        await self.execute(sql, execute=True)
+
+    async def create_table_user_clicks(self):
+        sql = """
+        CREATE TABLE IF NOT EXISTS user_clicks (
+        id SERIAL PRIMARY KEY,
+        user_id BIGINT NOT NULL,
+        link VARCHAR(255) NOT NULL,
+        click_time TIMESTAMP NOT NULL
+        );
+        """
+        await self.execute(sql, execute=True)
+
+    async def add_chat(self, user_id: int, admin_id: int = None, status: str = 'waiting'):
+        sql = "INSERT INTO chats (user_id, admin_id, start_time, status) VALUES($1, $2, NOW(), $3) RETURNING id"
+        return await self.execute(sql, user_id, admin_id, status, fetchval=True)
+
+    async def update_chat(self, chat_id: int, admin_id: int = None, status: str = None):
+        sql = "UPDATE chats SET admin_id = $1, status = $2 WHERE id = $3"
+        await self.execute(sql, admin_id, status, chat_id, execute=True)
+
+    async def end_chat(self, user_id: int):
+        sql = "UPDATE chats SET closed_at = NOW(), status = 'closed' WHERE user_id = $1 AND status = 'active'"
+        await self.execute(sql, user_id, execute=True)
+
     @staticmethod
     def format_args(sql, parameters: dict):
         sql += " AND ".join([
@@ -126,6 +163,10 @@ class Database:
     async def select_contract(self, user_id):
         sql = "SELECT contract FROM users WHERE telegram_id=$1"
         return await self.execute(sql, user_id, execute=True, fetch=True)
+
+    async def select_user_id_by_contract(self, contract):
+        sql = 'SELECT telegram_id FROM users WHERE contract=$1'
+        return await self.execute(sql, contract, fetch=True)
 
     async def select_tel(self, user_id):
         sql = "SELECT phone_number FROM users WHERE telegram_id=$1 "
@@ -165,14 +206,9 @@ class Database:
         sql = "SELECT full_name, telegram_id, contract FROM users"
         return await self.execute(sql, execute=True, fetch=True)
 
-    async def contract(self):
-        sql = "SELECT telegram_id, contract FROM users"
-        return await self.execute(sql, execute=True, fetch=True)
-
     async def select_id_by_phone(self, phone_number):
         sql = "SELECT telegram_id FROM users WHERE phone_number=$1"
         return await self.execute(sql, phone_number, execute=True, fetch=True)
-
 
     async def get_phone_by_contract(self, contract):
         sql = "SELECT phone_number FROM users WHERE contract=$1"
@@ -229,6 +265,40 @@ class Database:
         return await self.execute(sql, str(grp_alarm), fetchval=True)
 
     async def add_bill(self, bill_id, telegram_id, date, username, contract, pay_amount):
-        sql = "INSERT INTO bill_check (bill_id, telegram_id, date, username, contract, pay_amount) VALUES ($1, $2, $3, $4, $5, $6)"
+        sql = ("INSERT INTO bill_check (bill_id, telegram_id, date, username, contract, pay_amount) VALUES"
+               " ($1, $2, $3, $4, $5, $6)")
         return await self.execute(sql, bill_id, telegram_id, date, username, contract, pay_amount, execute=True)
 
+    async def get_message_history(self, user_id, message_count: int = 10):
+        sql = ("SELECT message FROM messages WHERE telegram_id=$1 ORDER BY date DESC LIMIT $2")
+        return await self.execute(sql, user_id, int(message_count), fetch=True)
+
+    async def log_user_click(self, user_id: int, link: str):
+        sql = "INSERT INTO user_clicks (user_id, link, click_time) VALUES ($1, $2, NOW())"
+        return await self.execute(sql, user_id, link, execute=True)
+
+    async def is_user_in_chat(self, user_id: int):
+        sql = "SELECT * FROM chats WHERE user_id = $1 AND status != 'closed'"
+        return bool(await self.execute(sql, user_id, fetchrow=True))
+
+    async def create_chat(self, user_id: int, admin_id: int):
+        sql = "INSERT INTO chats (user_id, admin_id, status) VALUES ($1, $2, 'active')"
+        await self.execute(sql, user_id, admin_id, execute=True)
+
+    async def get_admin_for_user(self, user_id: int):
+        sql = "SELECT admin_id FROM chats WHERE user_id = $1 AND status = 'active'"
+        result = await self.execute(sql, user_id, fetchrow=True)
+        return result['admin_id'] if result else None
+
+    async def get_user_for_admin(self, admin_id: int):
+        sql = "SELECT user_id FROM chats WHERE admin_id = $1 AND status = 'active'"
+        result = await self.execute(sql, admin_id, fetchrow=True)
+        return result['user_id'] if result else None
+
+    async def close_chat(self, user_id: int, admin_id: int):
+        sql = "UPDATE chats SET status = 'closed', closed_at = NOW() WHERE user_id = $1 AND admin_id = $2 AND status = 'active'"
+        await self.execute(sql, user_id, admin_id, execute=True)
+
+    async def save_rating(self, user_id: int, rating: int):
+        sql = "UPDATE chats SET rating = $2 WHERE user_id = $1 AND status = 'closed'"
+        await self.execute(sql, user_id, rating, execute=True)

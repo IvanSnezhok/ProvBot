@@ -267,3 +267,14 @@ async def users_with_alarm(grp, street=None, street_number=None):
     return users_with_alarm_contract
 
 
+async def check_contract_exists(contract):
+    conn = await aiomysql.connect(host=config.BILL_HOST, port=int(config.BILL_PORT),
+                                  user=config.BILL_USER, password=config.BILL_PASS,
+                                  db=config.BILL_NAME, loop=loop, use_unicode='cp1251')
+    cur = await conn.cursor()
+    await cur.execute(f"SELECT contract FROM users")
+    contracts_in_db = await cur.fetchall()
+    if (contract,) in contracts_in_db:
+        return True
+    else:
+        return False

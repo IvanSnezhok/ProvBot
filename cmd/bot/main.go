@@ -14,9 +14,16 @@ import (
 	"provbot/internal/utils"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		// .env file is optional, continue if it doesn't exist
+		// Variables can be set directly in environment
+	}
+
 	// Load configuration first to get log level
 	config, err := utils.LoadConfig()
 	if err != nil {

@@ -9,6 +9,8 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 )
 
+require github.com/joho/godotenv v1.5.1 // indirect
+
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -18,5 +20,5 @@ require (
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
-	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )

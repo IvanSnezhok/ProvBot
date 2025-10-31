@@ -307,23 +307,56 @@ func (h *SupportChatHandler) HandleEndChat(ctx *SupportContext) error {
 	// Clear user state
 	h.stateManager.ClearState(userID)
 
-	// Remove keyboard for user
-	removeKeyboard := tgbotapi.ReplyKeyboardRemove{RemoveKeyboard: true}
+	// Get user translator (use default language if not available)
+	userLang := i18n.DefaultLanguage
+	userTranslator := i18n.GetGlobalTranslator(userLang)
 	
-	// Notify user
-	msg := tgbotapi.NewMessage(userID, ctx.Translator.Get("support_chat_ended"))
-	msg.ReplyMarkup = removeKeyboard
+	// Show main menu for user
+	userKeyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(userTranslator.Get("menu_topup")),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(userTranslator.Get("menu_support")),
+			tgbotapi.NewKeyboardButton(userTranslator.Get("menu_time_pay")),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(userTranslator.Get("menu_back")),
+		),
+	)
+	userKeyboard.ResizeKeyboard = true
+	userKeyboard.OneTimeKeyboard = false
+	
+	// Notify user with main menu
+	userText := userTranslator.Get("support_chat_ended") + "\n\n" + userTranslator.Get("welcome_registered")
+	msg := tgbotapi.NewMessage(userID, userText)
+	msg.ReplyMarkup = userKeyboard
 	_, _ = h.bot.Send(msg)
 
-	// Notify admin
+	// Show admin panel for admin
+	adminKeyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(ctx.Translator.Get("admin_users"), "account_menu"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(ctx.Translator.Get("admin_broadcast"), "panel_send_message"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(ctx.Translator.Get("admin_message_history"), "message_history"),
+		),
+	)
+	
 	endMessage := fmt.Sprintf("Чат з користувачем %d завершено.", userID)
+	adminText := endMessage + "\n\n" + ctx.Translator.Get("admin_panel_title")
 	
 	// If it's a callback, edit the message; otherwise send new one
 	if ctx.Update.CallbackQuery != nil && messageID > 0 {
-		editMsg := tgbotapi.NewEditMessageText(chatID, messageID, endMessage)
+		editMsg := tgbotapi.NewEditMessageText(chatID, messageID, adminText)
+		editMsg.ReplyMarkup = &adminKeyboard
 		_, _ = h.bot.Send(editMsg)
 	} else {
-		msg2 := tgbotapi.NewMessage(adminID, endMessage)
+		msg2 := tgbotapi.NewMessage(adminID, adminText)
+		msg2.ReplyMarkup = adminKeyboard
 		_, _ = h.bot.Send(msg2)
 	}
 

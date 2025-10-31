@@ -2,6 +2,7 @@ package admin
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -85,8 +86,35 @@ func (h *PanelHandler) ShowAdminPanel(ctx *handlers.HandlerContext) error {
 	)
 
 	text := ctx.Translator.Get("admin_panel_title")
-	msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, text)
+	
+	// Get chat ID from Message or CallbackQuery
+	var chatID int64
+	if ctx.Update.Message != nil {
+		chatID = ctx.Update.Message.Chat.ID
+	} else if ctx.Update.CallbackQuery != nil && ctx.Update.CallbackQuery.Message != nil {
+		chatID = ctx.Update.CallbackQuery.Message.Chat.ID
+	} else if ctx.Update.CallbackQuery != nil {
+		chatID = ctx.Update.CallbackQuery.From.ID
+	} else {
+		return fmt.Errorf("cannot determine chat ID")
+	}
+
+	msg := tgbotapi.NewMessage(chatID, text)
 	msg.ReplyMarkup = keyboard
+	
+	// If it's a callback query, edit the message instead of sending new one
+	if ctx.Update.CallbackQuery != nil && ctx.Update.CallbackQuery.Message != nil {
+		// Answer callback first
+		callbackConfig := tgbotapi.NewCallback(ctx.Update.CallbackQuery.ID, "")
+		_, _ = ctx.Bot.Request(callbackConfig)
+		
+		// Edit message
+		editMsg := tgbotapi.NewEditMessageText(chatID, ctx.Update.CallbackQuery.Message.MessageID, text)
+		editMsg.ReplyMarkup = &keyboard
+		_, err := ctx.Bot.Send(editMsg)
+		return err
+	}
+	
 	_, err := ctx.Bot.Send(msg)
 	return err
 }

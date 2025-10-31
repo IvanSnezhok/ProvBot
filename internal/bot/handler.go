@@ -191,6 +191,14 @@ func (h *BotHandler) handleStart(ctx *BotContext) error {
 		Config:       ctx.Config,
 		StateManager: ctx.StateManager,
 	}
+	
+	// If user is admin, show admin panel instead of regular start
+	if ctx.Update.Message != nil && h.config.IsAdmin(ctx.Update.Message.From.ID) {
+		// Clear any existing state
+		ctx.StateManager.ClearState(int64(ctx.Update.Message.From.ID))
+		return h.adminPanelHandler.ShowAdminPanel(handlerCtx)
+	}
+	
 	return h.startHandler.HandleStart(handlerCtx)
 }
 
@@ -349,19 +357,6 @@ func (h *BotHandler) handleTextMessage(ctx *BotContext) error {
 	text := ctx.Update.Message.Text
 	userState, _, exists := h.stateManager.GetState(int64(ctx.Update.Message.From.ID))
 
-	// Check if admin sending message (could be support chat or admin command)
-	if h.config.IsAdmin(ctx.Update.Message.From.ID) {
-		// Check if admin is in support chat
-		supportCtx := &support.SupportContext{
-			Update:       ctx.Update,
-			User:         ctx.User,
-			Translator:   ctx.Translator,
-			Config:       ctx.Config,
-			StateManager: ctx.StateManager,
-		}
-		return h.supportChatHandler.HandleAdminMessage(supportCtx)
-	}
-
 	// Create handler context
 	handlerCtx := &handlers.HandlerContext{
 		Bot:          ctx.Bot,
@@ -374,6 +369,24 @@ func (h *BotHandler) handleTextMessage(ctx *BotContext) error {
 
 	// Check if admin sending message
 	if h.config.IsAdmin(ctx.Update.Message.From.ID) {
+		// Handle "Назад" button for admins - show admin panel
+		if text == ctx.Translator.Get("menu_back") {
+			ctx.StateManager.ClearState(int64(ctx.Update.Message.From.ID))
+			return h.adminPanelHandler.ShowAdminPanel(handlerCtx)
+		}
+		
+		// Check if admin is in support chat state (chatting or answering)
+		if userState == state.StateChatting || userState == state.StateAnswer {
+			supportCtx := &support.SupportContext{
+				Update:       ctx.Update,
+				User:         ctx.User,
+				Translator:   ctx.Translator,
+				Config:       ctx.Config,
+				StateManager: ctx.StateManager,
+			}
+			return h.supportChatHandler.HandleAdminMessage(supportCtx)
+		}
+		
 		// Handle admin panel text messages
 		return h.adminPanelHandler.HandleTextMessage(handlerCtx)
 	}

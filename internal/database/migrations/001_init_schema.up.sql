@@ -65,3 +65,15 @@ CREATE INDEX IF NOT EXISTS idx_outages_status ON outages(status);
 CREATE INDEX IF NOT EXISTS idx_outages_location ON outages(location);
 CREATE INDEX IF NOT EXISTS idx_admin_users_telegram_id ON admin_users(telegram_id);
 
+-- Grant permissions to database user
+-- IMPORTANT: Replace 'provbot' with your actual database user name from .env (POSTGRES_USER)
+-- If your POSTGRES_USER is different, update the username in the GRANT statements below
+-- You can run these commands manually if needed:
+-- GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO your_db_user;
+-- GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO your_db_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO provbot;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO provbot;
+-- Grant default privileges for future tables/sequences
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO provbot;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO provbot;
+

@@ -375,8 +375,10 @@ func (h *BotHandler) handleTextMessage(ctx *BotContext) error {
 			return h.adminPanelHandler.ShowAdminPanel(handlerCtx)
 		}
 		
-		// Check if admin is in support chat state (chatting or answering)
-		if userState == state.StateChatting || userState == state.StateAnswer {
+		// Check if admin is connected to an active support chat
+		// This check should happen before admin panel handling
+		if h.supportChatHandler.IsAdminInChat(int64(ctx.Update.Message.From.ID)) {
+			// Admin is in active support chat - handle as support message
 			supportCtx := &support.SupportContext{
 				Update:       ctx.Update,
 				User:         ctx.User,
@@ -387,11 +389,32 @@ func (h *BotHandler) handleTextMessage(ctx *BotContext) error {
 			return h.supportChatHandler.HandleAdminMessage(supportCtx)
 		}
 		
-		// Handle admin panel text messages
+		// Handle admin panel text messages if not in support chat
 		return h.adminPanelHandler.HandleTextMessage(handlerCtx)
 	}
 
-	// Handle menu buttons
+	// Handle states first (before menu buttons) to ensure support chat messages are processed
+	if exists {
+		switch userState {
+		case state.StateWaitingInvoicePayload:
+			return h.payBillHandler.HandleAmountInput(handlerCtx)
+		case state.StateWaitingInvoiceContract, state.StateInvalidPayload:
+			return h.payBillHandler.HandleContractInput(handlerCtx)
+		case state.StateWaitingForSupport, state.StateChatting:
+			// Handle support chat messages - check if user has active chat first
+			supportCtx := &support.SupportContext{
+				Update:       ctx.Update,
+				User:         ctx.User,
+				Translator:   ctx.Translator,
+				Config:       ctx.Config,
+				StateManager: ctx.StateManager,
+			}
+			// Always try to handle as support message if in support state
+			return h.supportChatHandler.HandleSupportMessage(supportCtx)
+		}
+	}
+
+	// Handle menu buttons (only if not in a state)
 	if text == ctx.Translator.Get("menu_topup") {
 		return h.payBillHandler.HandleTopUp(handlerCtx)
 	}
@@ -421,25 +444,6 @@ func (h *BotHandler) handleTextMessage(ctx *BotContext) error {
 	}
 	if text == ctx.Translator.Get("menu_back") {
 		return h.startHandler.ShowMainMenu(handlerCtx, ctx.User != nil && ctx.User.Contract != nil)
-	}
-
-	// Handle states
-	if exists {
-		switch userState {
-		case state.StateWaitingInvoicePayload:
-			return h.payBillHandler.HandleAmountInput(handlerCtx)
-		case state.StateWaitingInvoiceContract, state.StateInvalidPayload:
-			return h.payBillHandler.HandleContractInput(handlerCtx)
-		case state.StateWaitingForSupport, state.StateChatting:
-			supportCtx := &support.SupportContext{
-				Update:       ctx.Update,
-				User:         ctx.User,
-				Translator:   ctx.Translator,
-				Config:       ctx.Config,
-				StateManager: ctx.StateManager,
-			}
-			return h.supportChatHandler.HandleSupportMessage(supportCtx)
-		}
 	}
 
 	// Default: create support ticket

@@ -203,6 +203,19 @@ func (h *SupportChatHandler) HandleAdminConnect(ctx *SupportContext, userID int6
 	return nil
 }
 
+// IsAdminInChat checks if admin is connected to an active support chat
+func (h *SupportChatHandler) IsAdminInChat(adminID int64) bool {
+	ActiveChats.RLock()
+	defer ActiveChats.RUnlock()
+	
+	for _, aid := range ActiveChats.chats {
+		if aid == adminID {
+			return true
+		}
+	}
+	return false
+}
+
 // HandleAdminMessage handles admin messages in support chat
 func (h *SupportChatHandler) HandleAdminMessage(ctx *SupportContext) error {
 	adminID := ctx.Update.Message.From.ID

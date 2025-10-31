@@ -78,6 +78,9 @@ func GetENTranslations() map[string]string {
 		"support_chat_ended": "Chat ended. Thank you for your inquiry!",
 		"support_already_connected": "This user is already in an active chat with another manager.",
 		"support_no_active_chat": "You are not connected to any active chat.",
+		"support_connect_button": "Connect to chat",
+		"support_end_chat_button": "End chat",
+		"support_admin_connected": "You connected to chat with user. You can now respond to messages.",
 		
 		// Language
 		"language_title":    "Language Selection",

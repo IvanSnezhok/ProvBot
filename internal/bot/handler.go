@@ -408,6 +408,17 @@ func (h *BotHandler) handleTextMessage(ctx *BotContext) error {
 	if text == ctx.Translator.Get("menu_time_pay") {
 		return h.timePayHandler.HandleTimePay(handlerCtx)
 	}
+	if text == ctx.Translator.Get("support_end_chat_button") {
+		// User wants to end support chat
+		supportCtx := &support.SupportContext{
+			Update:       ctx.Update,
+			User:         ctx.User,
+			Translator:   ctx.Translator,
+			Config:       ctx.Config,
+			StateManager: ctx.StateManager,
+		}
+		return h.supportChatHandler.HandleEndChat(supportCtx)
+	}
 	if text == ctx.Translator.Get("menu_back") {
 		return h.startHandler.ShowMainMenu(handlerCtx, ctx.User != nil && ctx.User.Contract != nil)
 	}
@@ -490,6 +501,49 @@ func (h *BotHandler) handleCallbackQuery(ctx *BotContext) error {
 			msg := tgbotapi.NewMessage(callback.Message.Chat.ID, ctx.Translator.Get("language_changed"))
 			_, _ = ctx.Bot.Send(msg)
 		}
+	}
+
+	// Handle support callbacks (check before admin callbacks since support can be for admins)
+	if strings.HasPrefix(data, "support_connect_") {
+		if !h.config.IsAdmin(callback.From.ID) {
+			callbackConfig := tgbotapi.NewCallback(callback.ID, "У вас немає прав доступу")
+			_, _ = ctx.Bot.Request(callbackConfig)
+			return nil
+		}
+		
+		userIDStr := strings.TrimPrefix(data, "support_connect_")
+		userID, err := strconv.ParseInt(userIDStr, 10, 64)
+		if err != nil {
+			callbackConfig := tgbotapi.NewCallback(callback.ID, "Помилка: невірний ID користувача")
+			_, _ = ctx.Bot.Request(callbackConfig)
+			return nil
+		}
+		
+		supportCtx := &support.SupportContext{
+			Update:       ctx.Update,
+			User:         ctx.User,
+			Translator:   ctx.Translator,
+			Config:       ctx.Config,
+			StateManager: ctx.StateManager,
+		}
+		return h.supportChatHandler.HandleAdminConnect(supportCtx, userID)
+	}
+	
+	if data == "support_end_chat" {
+		if !h.config.IsAdmin(callback.From.ID) {
+			callbackConfig := tgbotapi.NewCallback(callback.ID, "У вас немає прав доступу")
+			_, _ = ctx.Bot.Request(callbackConfig)
+			return nil
+		}
+		
+		supportCtx := &support.SupportContext{
+			Update:       ctx.Update,
+			User:         ctx.User,
+			Translator:   ctx.Translator,
+			Config:       ctx.Config,
+			StateManager: ctx.StateManager,
+		}
+		return h.supportChatHandler.HandleEndChat(supportCtx)
 	}
 
 	// Handle admin callbacks

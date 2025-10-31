@@ -78,6 +78,9 @@ func GetUATranslations() map[string]string {
 		"support_chat_ended":        "Чат завершено. Дякуємо за звернення!",
 		"support_already_connected": "Цей користувач вже в активному чаті з іншим менеджером.",
 		"support_no_active_chat":    "Ви не підключені до жодного активного чату.",
+		"support_connect_button":    "Підключитися до чату",
+		"support_end_chat_button":   "Завершити чат",
+		"support_admin_connected":   "Ви підключилися до чату з користувачем. Можете відповідати на повідомлення.",
 
 		// Language
 		"language_title":   "Вибір мови",

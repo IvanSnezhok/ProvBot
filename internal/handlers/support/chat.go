@@ -121,9 +121,27 @@ func (h *SupportChatHandler) HandleSupportMessage(ctx *SupportContext) error {
 	return err
 }
 
-// HandleAdminConnect handles /connect command for admins
+// HandleAdminConnect handles /connect command or callback for admins
 func (h *SupportChatHandler) HandleAdminConnect(ctx *SupportContext, userID int64) error {
-	adminID := ctx.Update.Message.From.ID
+	var adminID int64
+	var chatID int64
+	var messageID int
+	
+	// Get admin ID from Message or CallbackQuery
+	if ctx.Update.Message != nil {
+		adminID = ctx.Update.Message.From.ID
+		chatID = ctx.Update.Message.Chat.ID
+	} else if ctx.Update.CallbackQuery != nil {
+		adminID = ctx.Update.CallbackQuery.From.ID
+		chatID = ctx.Update.CallbackQuery.Message.Chat.ID
+		messageID = ctx.Update.CallbackQuery.Message.MessageID
+		
+		// Answer callback query
+		callbackConfig := tgbotapi.NewCallback(ctx.Update.CallbackQuery.ID, "")
+		_, _ = h.bot.Request(callbackConfig)
+	} else {
+		return fmt.Errorf("cannot determine admin ID")
+	}
 
 	// Check if user already has an admin
 	ActiveChats.Lock()
@@ -141,13 +159,43 @@ func (h *SupportChatHandler) HandleAdminConnect(ctx *SupportContext, userID int6
 	// Update user state
 	h.stateManager.SetState(userID, state.StateChatting, nil)
 
-	// Notify user
+	// Notify user with end chat button
+	userKeyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(ctx.Translator.Get("support_end_chat_button")),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(ctx.Translator.Get("menu_back")),
+		),
+	)
+	userKeyboard.ResizeKeyboard = true
+	
 	msg := tgbotapi.NewMessage(userID, ctx.Translator.Get("support_manager_connected"))
+	msg.ReplyMarkup = userKeyboard
 	_, _ = h.bot.Send(msg)
 
-	// Notify admin
-	msg2 := tgbotapi.NewMessage(adminID, fmt.Sprintf("Ви підключилися до чату з користувачем %d", userID))
-	_, _ = h.bot.Send(msg2)
+	// Notify admin with end chat button (inline)
+	adminKeyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(
+				ctx.Translator.Get("support_end_chat_button"),
+				"support_end_chat",
+			),
+		),
+	)
+	
+	adminMessage := ctx.Translator.Get("support_admin_connected")
+	
+	// If it's a callback, edit the message; otherwise send new one
+	if ctx.Update.CallbackQuery != nil && messageID > 0 {
+		editMsg := tgbotapi.NewEditMessageText(chatID, messageID, adminMessage)
+		editMsg.ReplyMarkup = &adminKeyboard
+		_, _ = h.bot.Send(editMsg)
+	} else {
+		msg2 := tgbotapi.NewMessage(adminID, adminMessage)
+		msg2.ReplyMarkup = adminKeyboard
+		_, _ = h.bot.Send(msg2)
+	}
 
 	// Notify other admins
 	h.notifyOtherAdmins(ctx, adminID, userID)
@@ -187,24 +235,58 @@ func (h *SupportChatHandler) HandleAdminMessage(ctx *SupportContext) error {
 	return err
 }
 
-// HandleEndChat handles /end_chat command for admins
+// HandleEndChat handles /end_chat command or callback for admins and users
 func (h *SupportChatHandler) HandleEndChat(ctx *SupportContext) error {
-	adminID := ctx.Update.Message.From.ID
+	var chatID int64
+	var messageID int
+	var isAdmin bool
+	var requesterID int64
+	
+	// Get requester ID from Message or CallbackQuery
+	if ctx.Update.Message != nil {
+		requesterID = ctx.Update.Message.From.ID
+		chatID = ctx.Update.Message.Chat.ID
+		isAdmin = ctx.Config.IsAdmin(requesterID)
+	} else if ctx.Update.CallbackQuery != nil {
+		requesterID = ctx.Update.CallbackQuery.From.ID
+		chatID = ctx.Update.CallbackQuery.Message.Chat.ID
+		messageID = ctx.Update.CallbackQuery.Message.MessageID
+		isAdmin = ctx.Config.IsAdmin(requesterID)
+		
+		// Answer callback query
+		callbackConfig := tgbotapi.NewCallback(ctx.Update.CallbackQuery.ID, "")
+		_, _ = h.bot.Request(callbackConfig)
+	} else {
+		return fmt.Errorf("cannot determine requester ID")
+	}
 
 	// Find and remove chat
 	ActiveChats.Lock()
 	var userID int64 = -1
-	for uid, aid := range ActiveChats.chats {
-		if aid == adminID {
-			userID = uid
-			delete(ActiveChats.chats, uid)
-			break
+	var adminID int64 = -1
+	
+	if isAdmin {
+		// Admin ending chat - find user by admin ID
+		for uid, aid := range ActiveChats.chats {
+			if aid == requesterID {
+				userID = uid
+				adminID = requesterID
+				delete(ActiveChats.chats, uid)
+				break
+			}
+		}
+	} else {
+		// User ending chat - find admin by user ID
+		if aid, exists := ActiveChats.chats[requesterID]; exists {
+			userID = requesterID
+			adminID = aid
+			delete(ActiveChats.chats, requesterID)
 		}
 	}
 	ActiveChats.Unlock()
 
 	if userID == -1 {
-		msg := tgbotapi.NewMessage(adminID, ctx.Translator.Get("support_no_active_chat"))
+		msg := tgbotapi.NewMessage(requesterID, ctx.Translator.Get("support_no_active_chat"))
 		_, _ = h.bot.Send(msg)
 		return nil
 	}
@@ -212,13 +294,25 @@ func (h *SupportChatHandler) HandleEndChat(ctx *SupportContext) error {
 	// Clear user state
 	h.stateManager.ClearState(userID)
 
+	// Remove keyboard for user
+	removeKeyboard := tgbotapi.ReplyKeyboardRemove{RemoveKeyboard: true}
+	
 	// Notify user
 	msg := tgbotapi.NewMessage(userID, ctx.Translator.Get("support_chat_ended"))
+	msg.ReplyMarkup = removeKeyboard
 	_, _ = h.bot.Send(msg)
 
 	// Notify admin
-	msg2 := tgbotapi.NewMessage(adminID, fmt.Sprintf("Чат з користувачем %d завершено.", userID))
-	_, _ = h.bot.Send(msg2)
+	endMessage := fmt.Sprintf("Чат з користувачем %d завершено.", userID)
+	
+	// If it's a callback, edit the message; otherwise send new one
+	if ctx.Update.CallbackQuery != nil && messageID > 0 {
+		editMsg := tgbotapi.NewEditMessageText(chatID, messageID, endMessage)
+		_, _ = h.bot.Send(editMsg)
+	} else {
+		msg2 := tgbotapi.NewMessage(adminID, endMessage)
+		_, _ = h.bot.Send(msg2)
+	}
 
 	return nil
 }
@@ -232,8 +326,19 @@ func (h *SupportChatHandler) notifyAdmins(ctx *SupportContext, userID int64) {
 
 	message := fmt.Sprintf("Новий запит на чат підтримки від користувача %s (ID: %d)", fullName, userID)
 
+	// Create inline keyboard with connect button
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(
+				ctx.Translator.Get("support_connect_button"),
+				fmt.Sprintf("support_connect_%d", userID),
+			),
+		),
+	)
+
 	for _, adminID := range h.config.AdminTelegramIDs {
 		msg := tgbotapi.NewMessage(adminID, message)
+		msg.ReplyMarkup = keyboard
 		_, _ = h.bot.Send(msg)
 	}
 }

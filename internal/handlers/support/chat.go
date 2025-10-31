@@ -358,8 +358,19 @@ func (h *SupportChatHandler) notifyAdmins(ctx *SupportContext, userID int64) {
 
 // notifyOtherAdmins notifies other admins about connection
 func (h *SupportChatHandler) notifyOtherAdmins(ctx *SupportContext, connectedAdminID, userID int64) {
+	var adminFirstName string
+	
+	// Get admin first name from Message or CallbackQuery
+	if ctx.Update.Message != nil {
+		adminFirstName = ctx.Update.Message.From.FirstName
+	} else if ctx.Update.CallbackQuery != nil {
+		adminFirstName = ctx.Update.CallbackQuery.From.FirstName
+	} else {
+		adminFirstName = "Адміністратор" // Fallback if cannot determine
+	}
+	
 	message := fmt.Sprintf("Адміністратор %s підключився до чату з користувачем %d",
-		ctx.Update.Message.From.FirstName, userID)
+		adminFirstName, userID)
 
 	for _, adminID := range h.config.AdminTelegramIDs {
 		if adminID != connectedAdminID {

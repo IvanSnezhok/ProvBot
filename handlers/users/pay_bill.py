@@ -30,7 +30,7 @@ async def contract_pay(message: types.Message, state: FSMContext):
         await message.answer(_("Вітаємо! Для звернення, будь-ласка, скористайтесь нашим email технічної підтримки "
                                "support@infoaura.com.ua"))
     try:
-        elif database.data[5] == 'СТАНДАРТ(180грн).':
+        if database.data[5] == 'СТАНДАРТ(180грн).':
             msg = await message.answer(text=_("Зверніть увагу, що тут ви можете поповнити тільки свій особовий рахунок!"))
             await db.message("BOT", 10001, msg.html_text, msg.date)
             invoice_pay = P180.generate_invoice()

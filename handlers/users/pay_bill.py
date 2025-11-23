@@ -80,8 +80,8 @@ async def contract_pay(message: types.Message, state: FSMContext):
                                             "250,\n"
                                             "500\n"),
                                     reply_markup=return_button)
-            await state.set_state('invoice_payload')
-            await db.message("BOT", 10001, msg.html_text, msg.date)
+        await state.set_state('invoice_payload')
+        await db.message("BOT", 10001, msg.html_text, msg.date)
 
 
 @dp.message_handler(state='invoice_payload')

@@ -25,53 +25,63 @@ async def contract_pay(message: types.Message, state: FSMContext):
     await database.search_query(tel=await db.select_tel(user_id=message.from_user.id))
     ban = await db.get_ban()
     print(ban)
+
     if message.from_user.id in ban:
         await message.answer(_("Вітаємо! Для звернення, будь-ласка, скористайтесь нашим email технічної підтримки "
                                "support@infoaura.com.ua"))
-    elif database.data[5] == 'СТАНДАРТ(180грн).':
-        msg = await message.answer(text=_("Зверніть увагу, що тут ви можете поповнити тільки свій особовий рахунок!"))
-        await db.message("BOT", 10001, msg.html_text, msg.date)
-        invoice_pay = P180.generate_invoice()
-        await state.update_data({'bill_id_p180': invoice_pay[' start_parameter']})
-        await bot.send_invoice(message.from_user.id, **invoice_pay, payload=180)
-        msg1 = await message.answer(
-            text=_("Діє акція - поповни рахунок на 6 місяців одним платежем та отримуй 10% від суми поповнення!"))
-        await db.message("BOT", 10001, msg1.html_text, msg1.date)
-        invoice_pay = P1080.generate_invoice()
-        await state.update_data({'bill_id_p1080': invoice_pay[' start_parameter']})
-        await bot.send_invoice(message.from_user.id, **invoice_pay, payload=1080)
-    elif database.data[5] == 'PON-100(200грн)' or database.data[5] == 'VIP WIFI-200':
-        msg = await message.answer(text=_("Зверніть увагу, що тут ви можете поповнити тільки свій особовий рахунок!"))
-        invoice_pay = P200.generate_invoice()
-        await state.update_data({'bill_id_p200': invoice_pay[' start_parameter']})
-        await bot.send_invoice(message.from_user.id, **invoice_pay, payload=200)
-        await db.message("BOT", 10001, msg.html_text, msg.date)
-        msg1 = await message.answer(
-            text=_("Діє акція - поповни рахунок на 6 місяців одним платежем та отримуй 10% від суми поповнення!"))
-        invoice_pay = P1200.generate_invoice()
-        await state.update_data({'bill_id_p1200': invoice_pay[' start_parameter']})
-        await bot.send_invoice(message.from_user.id, **invoice_pay, payload=1200)
-        await db.message("BOT", 10001, msg1.html_text, msg1.date)
-    elif database.data[5] == 'PON-300(350грн)':
-        msg = await message.answer(text=_("Зверніть увагу, що тут ви можете поповнити тільки свій особовий рахунок!"))
-        invoice_pay = P350.generate_invoice()
-        await state.update_data({'bill_id_p350': invoice_pay[' start_parameter']})
-        await bot.send_invoice(message.from_user.id, **invoice_pay, payload=350)
-        await db.message("BOT", 10001, msg.html_text, msg.date)
-        msg1 = await message.answer(
-            text=_("Діє акція - поповни рахунок на 6 місяців одним платежем та отримуй 10% від суми поповнення!"))
-        invoice_pay = P2100.generate_invoice()
-        await state.update_data({'bill_id_p2100': invoice_pay[' start_parameter']})
-        await bot.send_invoice(message.from_user.id, **invoice_pay, payload=2100)
-        await db.message("BOT", 10001, msg1.html_text, msg1.date)
-    else:
+    try:
+        elif database.data[5] == 'СТАНДАРТ(180грн).':
+            msg = await message.answer(text=_("Зверніть увагу, що тут ви можете поповнити тільки свій особовий рахунок!"))
+            await db.message("BOT", 10001, msg.html_text, msg.date)
+            invoice_pay = P180.generate_invoice()
+            await state.update_data({'bill_id_p180': invoice_pay[' start_parameter']})
+            await bot.send_invoice(message.from_user.id, **invoice_pay, payload=180)
+            msg1 = await message.answer(
+                text=_("Діє акція - поповни рахунок на 6 місяців одним платежем та отримуй 10% від суми поповнення!"))
+            await db.message("BOT", 10001, msg1.html_text, msg1.date)
+            invoice_pay = P1080.generate_invoice()
+            await state.update_data({'bill_id_p1080': invoice_pay[' start_parameter']})
+            await bot.send_invoice(message.from_user.id, **invoice_pay, payload=1080)
+        elif database.data[5] == 'PON-100(200грн)' or database.data[5] == 'VIP WIFI-200':
+            msg = await message.answer(text=_("Зверніть увагу, що тут ви можете поповнити тільки свій особовий рахунок!"))
+            invoice_pay = P200.generate_invoice()
+            await state.update_data({'bill_id_p200': invoice_pay[' start_parameter']})
+            await bot.send_invoice(message.from_user.id, **invoice_pay, payload=200)
+            await db.message("BOT", 10001, msg.html_text, msg.date)
+            msg1 = await message.answer(
+                text=_("Діє акція - поповни рахунок на 6 місяців одним платежем та отримуй 10% від суми поповнення!"))
+            invoice_pay = P1200.generate_invoice()
+            await state.update_data({'bill_id_p1200': invoice_pay[' start_parameter']})
+            await bot.send_invoice(message.from_user.id, **invoice_pay, payload=1200)
+            await db.message("BOT", 10001, msg1.html_text, msg1.date)
+        elif database.data[5] == 'PON-300(350грн)':
+            msg = await message.answer(text=_("Зверніть увагу, що тут ви можете поповнити тільки свій особовий рахунок!"))
+            invoice_pay = P350.generate_invoice()
+            await state.update_data({'bill_id_p350': invoice_pay[' start_parameter']})
+            await bot.send_invoice(message.from_user.id, **invoice_pay, payload=350)
+            await db.message("BOT", 10001, msg.html_text, msg.date)
+            msg1 = await message.answer(
+                text=_("Діє акція - поповни рахунок на 6 місяців одним платежем та отримуй 10% від суми поповнення!"))
+            invoice_pay = P2100.generate_invoice()
+            await state.update_data({'bill_id_p2100': invoice_pay[' start_parameter']})
+            await bot.send_invoice(message.from_user.id, **invoice_pay, payload=2100)
+            await db.message("BOT", 10001, msg1.html_text, msg1.date)
+        else:
+            msg = await message.answer(text=_("Для поповнення рахунку введіть сумму поповненя!\n"
+                                            "Наприклад:\n"
+                                            "250,\n"
+                                            "500\n"),
+                                    reply_markup=return_button)
+            await state.set_state('invoice_payload')
+            await db.message("BOT", 10001, msg.html_text, msg.date)
+    except IndexError:
         msg = await message.answer(text=_("Для поповнення рахунку введіть сумму поповненя!\n"
-                                          "Наприклад:\n"
-                                          "250,\n"
-                                          "500\n"),
-                                   reply_markup=return_button)
-        await state.set_state('invoice_payload')
-        await db.message("BOT", 10001, msg.html_text, msg.date)
+                                            "Наприклад:\n"
+                                            "250,\n"
+                                            "500\n"),
+                                    reply_markup=return_button)
+            await state.set_state('invoice_payload')
+            await db.message("BOT", 10001, msg.html_text, msg.date)
 
 
 @dp.message_handler(state='invoice_payload')

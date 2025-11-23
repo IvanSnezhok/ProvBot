@@ -6,32 +6,34 @@ import (
 	"strconv"
 	"strings"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"provbot/internal/handlers"
 	"provbot/internal/models"
 	"provbot/internal/repository"
+	"provbot/internal/service"
 	"provbot/internal/state"
 	"provbot/internal/utils"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type UsersHandler struct {
-	billingRepo  *repository.BillingRepository
-	userRepo     *repository.UserRepository
-	stateManager *state.StateManager
-	config       *utils.Config
+	billingService *service.BillingService
+	userRepo       *repository.UserRepository
+	stateManager   *state.StateManager
+	config         *utils.Config
 }
 
 func NewUsersHandler(
-	billingRepo *repository.BillingRepository,
+	billingService *service.BillingService,
 	userRepo *repository.UserRepository,
 	stateManager *state.StateManager,
 	config *utils.Config,
 ) *UsersHandler {
 	return &UsersHandler{
-		billingRepo:  billingRepo,
-		userRepo:     userRepo,
-		stateManager: stateManager,
-		config:       config,
+		billingService: billingService,
+		userRepo:       userRepo,
+		stateManager:   stateManager,
+		config:         config,
 	}
 }
 
@@ -127,7 +129,8 @@ func (h *UsersHandler) HandleSearchAddress(ctx *handlers.HandlerContext) error {
 func (h *UsersHandler) HandleContractInput(ctx *handlers.HandlerContext, contract string) error {
 	h.stateManager.ClearState(int64(ctx.Update.Message.From.ID))
 
-	billingUser, err := h.billingRepo.SearchByContract(context.Background(), contract)
+	// Use SearchUser which handles contract or phone
+	billingUser, err := h.billingService.SearchUser(context.Background(), contract)
 	if err != nil {
 		utils.Logger.WithError(err).Error("Failed to search by contract")
 		msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, ctx.Translator.Get("error"))
@@ -148,7 +151,7 @@ func (h *UsersHandler) HandleContractInput(ctx *handlers.HandlerContext, contrac
 func (h *UsersHandler) HandlePhoneInput(ctx *handlers.HandlerContext, phone string) error {
 	h.stateManager.ClearState(int64(ctx.Update.Message.From.ID))
 
-	billingUser, contract, err := h.billingRepo.SearchByPhone(context.Background(), phone)
+	billingUser, err := h.billingService.SearchUser(context.Background(), phone)
 	if err != nil {
 		utils.Logger.WithError(err).Error("Failed to search by phone")
 		msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, ctx.Translator.Get("error"))
@@ -162,12 +165,12 @@ func (h *UsersHandler) HandlePhoneInput(ctx *handlers.HandlerContext, phone stri
 		return nil
 	}
 
-	return h.showUserInfo(ctx, billingUser, contract)
+	return h.showUserInfo(ctx, billingUser, billingUser.Contract)
 }
 
 // HandleNameInput handles name input
 func (h *UsersHandler) HandleNameInput(ctx *handlers.HandlerContext, name string) error {
-	billingUsers, err := h.billingRepo.SearchByName(context.Background(), name)
+	billingUsers, err := h.billingService.SearchByName(context.Background(), name)
 	if err != nil {
 		utils.Logger.WithError(err).Error("Failed to search by name")
 		msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, ctx.Translator.Get("error"))
@@ -183,7 +186,7 @@ func (h *UsersHandler) HandleNameInput(ctx *handlers.HandlerContext, name string
 
 	if len(billingUsers) == 1 {
 		h.stateManager.ClearState(int64(ctx.Update.Message.From.ID))
-		return h.showUserInfo(ctx, &billingUsers[0], "")
+		return h.showUserInfo(ctx, &billingUsers[0], billingUsers[0].Contract)
 	}
 
 	// Multiple users found - show list
@@ -192,7 +195,7 @@ func (h *UsersHandler) HandleNameInput(ctx *handlers.HandlerContext, name string
 
 // HandleAddressInput handles address input
 func (h *UsersHandler) HandleAddressInput(ctx *handlers.HandlerContext, address string) error {
-	billingUsers, err := h.billingRepo.SearchByAddress(context.Background(), address)
+	billingUsers, err := h.billingService.SearchByAddress(context.Background(), address)
 	if err != nil {
 		utils.Logger.WithError(err).Error("Failed to search by address")
 		msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, ctx.Translator.Get("error"))
@@ -208,7 +211,7 @@ func (h *UsersHandler) HandleAddressInput(ctx *handlers.HandlerContext, address 
 
 	if len(billingUsers) == 1 {
 		h.stateManager.ClearState(int64(ctx.Update.Message.From.ID))
-		return h.showUserInfo(ctx, &billingUsers[0], "")
+		return h.showUserInfo(ctx, &billingUsers[0], billingUsers[0].Contract)
 	}
 
 	// Multiple users found - show list
@@ -222,7 +225,7 @@ func (h *UsersHandler) HandleContractSearch(ctx *handlers.HandlerContext, contra
 
 // HandleAccountSelection handles account selection from list
 func (h *UsersHandler) HandleAccountSelection(ctx *handlers.HandlerContext, contract string) error {
-	billingUser, err := h.billingRepo.SearchByContract(context.Background(), contract)
+	billingUser, err := h.billingService.SearchUser(context.Background(), contract)
 	if err != nil {
 		utils.Logger.WithError(err).Error("Failed to search by contract")
 		msg := tgbotapi.NewMessage(ctx.Update.CallbackQuery.Message.Chat.ID, ctx.Translator.Get("error"))
@@ -276,7 +279,7 @@ func (h *UsersHandler) showUserInfo(ctx *handlers.HandlerContext, billingUser *m
 	// Store selected user ID in state data
 	h.stateManager.SetState(int64(ctx.Update.Message.From.ID), state.StateAccountMenuList, state.StateData{
 		"selected_user_id": billingUser.ID,
-		"contract":        contract,
+		"contract":         contract,
 	})
 
 	_, err := ctx.Bot.Send(msg)
@@ -290,8 +293,8 @@ func (h *UsersHandler) showUserList(ctx *handlers.HandlerContext, users []models
 		if i >= 10 { // Limit to 10 users
 			break
 		}
-		contract := fmt.Sprintf("contract_%d", user.ID) // Placeholder - should get actual contract
-		buttonText := fmt.Sprintf("%s (ID: %d)", user.Username, user.ID)
+		contract := user.Contract
+		buttonText := fmt.Sprintf("%s (ID: %d)", user.Name, user.ID) // Changed Username to Name
 		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(buttonText, fmt.Sprintf("account_%s", contract)),
 		))
@@ -319,7 +322,7 @@ func (h *UsersHandler) formatUserInfo(ctx *handlers.HandlerContext, user *models
 	text.WriteString(ctx.Translator.Get("admin_user_info_title"))
 	text.WriteString("\n\n")
 	text.WriteString(fmt.Sprintf("<b>%s:</b> %s\n", ctx.Translator.Get("admin_user_id"), strconv.FormatInt(user.ID, 10)))
-	text.WriteString(fmt.Sprintf("<b>%s:</b> %s\n", ctx.Translator.Get("admin_username"), user.Username))
+	text.WriteString(fmt.Sprintf("<b>%s:</b> %s\n", ctx.Translator.Get("admin_username"), user.Name)) // Changed Username to Name
 	text.WriteString(fmt.Sprintf("<b>%s:</b> %.2f грн\n", ctx.Translator.Get("admin_balance"), user.Balance))
 	text.WriteString(fmt.Sprintf("<b>%s:</b> %s\n", ctx.Translator.Get("admin_status"), user.Status))
 	if contract != "" {
@@ -327,4 +330,3 @@ func (h *UsersHandler) formatUserInfo(ctx *handlers.HandlerContext, user *models
 	}
 	return text.String()
 }
-

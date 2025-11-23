@@ -14,7 +14,7 @@ var MySQLDB *sql.DB
 
 // InitMySQL initializes MySQL connection for billing system
 func InitMySQL(config *utils.Config) error {
-	dsn := config.GetMySQLDSN()
+	dsn := config.GetMySQLDSN() + "&charset=cp1251&collation=cp1251_general_ci"
 	
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {

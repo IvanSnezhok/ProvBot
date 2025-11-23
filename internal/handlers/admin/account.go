@@ -4,31 +4,33 @@ import (
 	"context"
 	"fmt"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"provbot/internal/handlers"
 	"provbot/internal/repository"
+	"provbot/internal/service"
 	"provbot/internal/state"
 	"provbot/internal/utils"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type AccountHandler struct {
-	billingRepo  *repository.BillingRepository
-	userRepo     *repository.UserRepository
-	stateManager *state.StateManager
-	config       *utils.Config
+	billingService *service.BillingService
+	userRepo       *repository.UserRepository
+	stateManager   *state.StateManager
+	config         *utils.Config
 }
 
 func NewAccountHandler(
-	billingRepo *repository.BillingRepository,
+	billingService *service.BillingService,
 	userRepo *repository.UserRepository,
 	stateManager *state.StateManager,
 	config *utils.Config,
 ) *AccountHandler {
 	return &AccountHandler{
-		billingRepo:  billingRepo,
-		userRepo:     userRepo,
-		stateManager: stateManager,
-		config:       config,
+		billingService: billingService,
+		userRepo:       userRepo,
+		stateManager:   stateManager,
+		config:         config,
 	}
 }
 
@@ -46,7 +48,7 @@ func (h *AccountHandler) HandleAccountMenu(ctx *handlers.HandlerContext) error {
 		return fmt.Errorf("user ID not found in state")
 	}
 
-	billingUser, err := h.billingRepo.GetUserByID(context.Background(), userID)
+	billingUser, err := h.billingService.GetUserByID(context.Background(), userID)
 	if err != nil {
 		utils.Logger.WithError(err).Error("Failed to get billing user")
 		msg := tgbotapi.NewMessage(ctx.Update.CallbackQuery.Message.Chat.ID, ctx.Translator.Get("error"))
@@ -66,7 +68,6 @@ func (h *AccountHandler) HandleAccountMenu(ctx *handlers.HandlerContext) error {
 	}
 
 	// Show user info (reuse UsersHandler method)
-	usersHandler := NewUsersHandler(h.billingRepo, h.userRepo, h.stateManager, h.config)
+	usersHandler := NewUsersHandler(h.billingService, h.userRepo, h.stateManager, h.config)
 	return usersHandler.showUserInfo(ctx, billingUser, contract)
 }
-

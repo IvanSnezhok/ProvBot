@@ -6,23 +6,24 @@ import (
 	"sync"
 	"time"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"provbot/internal/i18n"
 	"provbot/internal/models"
 	"provbot/internal/repository"
 	"provbot/internal/utils"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 // BalanceNotificationScheduler handles scheduled balance notifications
 type BalanceNotificationScheduler struct {
-	bot          *tgbotapi.BotAPI
-	userRepo     *repository.UserRepository
-	billingRepo  *repository.BillingRepository
-	config       *utils.Config
-	workerCount  int
-	running      bool
-	stopChan     chan struct{}
-	wg           sync.WaitGroup
+	bot         *tgbotapi.BotAPI
+	userRepo    *repository.UserRepository
+	billingRepo *repository.BillingRepository
+	config      *utils.Config
+	workerCount int
+	running     bool
+	stopChan    chan struct{}
+	wg          sync.WaitGroup
 }
 
 // NewBalanceNotificationScheduler creates a new scheduler instance
@@ -157,8 +158,8 @@ func (s *BalanceNotificationScheduler) processNotifications() {
 	}
 
 	utils.Logger.WithFields(map[string]interface{}{
-		"component": "scheduler",
-		"action":    "process_notifications",
+		"component":   "scheduler",
+		"action":      "process_notifications",
 		"users_count": len(users),
 		"workers":     s.workerCount,
 	}).Info("Processing users for balance notifications")
@@ -166,13 +167,13 @@ func (s *BalanceNotificationScheduler) processNotifications() {
 	// Create worker pool for parallel processing
 	userChan := make(chan models.User, len(users))
 	var wg sync.WaitGroup
-	
+
 	// Statistics
 	var stats struct {
-		processed   int
-		notified    int
-		skipped     int
-		errors      int
+		processed int
+		notified  int
+		skipped   int
+		errors    int
 		sync.Mutex
 	}
 
@@ -194,23 +195,23 @@ func (s *BalanceNotificationScheduler) processNotifications() {
 
 	duration := time.Since(startTime)
 	utils.Logger.WithFields(map[string]interface{}{
-		"component":    "scheduler",
-		"action":       "process_notifications",
-		"duration_ms":  duration.Milliseconds(),
-		"processed":    stats.processed,
-		"notified":     stats.notified,
-		"skipped":      stats.skipped,
-		"errors":       stats.errors,
-		"users_total":  len(users),
+		"component":   "scheduler",
+		"action":      "process_notifications",
+		"duration_ms": duration.Milliseconds(),
+		"processed":   stats.processed,
+		"notified":    stats.notified,
+		"skipped":     stats.skipped,
+		"errors":      stats.errors,
+		"users_total": len(users),
 	}).Info("Balance notification process completed")
 }
 
 // worker processes users from the channel
 func (s *BalanceNotificationScheduler) worker(ctx context.Context, userChan <-chan models.User, wg *sync.WaitGroup, workerID int, stats *struct {
-	processed   int
-	notified    int
-	skipped     int
-	errors      int
+	processed int
+	notified  int
+	skipped   int
+	errors    int
 	sync.Mutex
 }) {
 	defer wg.Done()
@@ -225,24 +226,24 @@ func (s *BalanceNotificationScheduler) worker(ctx context.Context, userChan <-ch
 
 	workerDuration := time.Since(workerStartTime)
 	utils.Logger.WithFields(map[string]interface{}{
-		"component":    "scheduler",
-		"action":       "worker_completed",
-		"worker_id":    workerID,
-		"processed":    processed,
-		"duration_ms":  workerDuration.Milliseconds(),
+		"component":   "scheduler",
+		"action":      "worker_completed",
+		"worker_id":   workerID,
+		"processed":   processed,
+		"duration_ms": workerDuration.Milliseconds(),
 	}).Debug("Worker completed processing")
 }
 
 // processUser processes a single user's balance notification
 func (s *BalanceNotificationScheduler) processUser(ctx context.Context, user models.User, workerID int, stats *struct {
-	processed   int
-	notified    int
-	skipped     int
-	errors      int
+	processed int
+	notified  int
+	skipped   int
+	errors    int
 	sync.Mutex
 }) {
 	processedUserStartTime := time.Now()
-	
+
 	if user.Contract == nil || *user.Contract == "" {
 		stats.Lock()
 		stats.errors++
@@ -257,7 +258,7 @@ func (s *BalanceNotificationScheduler) processUser(ctx context.Context, user mod
 	}
 
 	// Get balance from billing system
-	balance, err := s.billingRepo.GetBalanceByContract(ctx, *user.Contract)
+	billingUser, err := s.billingRepo.GetUserByContract(ctx, *user.Contract)
 	if err != nil {
 		stats.Lock()
 		stats.errors++
@@ -271,6 +272,22 @@ func (s *BalanceNotificationScheduler) processUser(ctx context.Context, user mod
 		}).Error("Failed to get balance for contract")
 		return
 	}
+
+	if billingUser == nil {
+		stats.Lock()
+		stats.errors++
+		stats.Unlock()
+		utils.Logger.WithFields(map[string]interface{}{
+			"component": "scheduler",
+			"action":    "get_balance",
+			"user_id":   user.TelegramID,
+			"contract":  *user.Contract,
+			"error":     "user not found in billing",
+		}).Error("User not found in billing")
+		return
+	}
+
+	balance := billingUser.Balance
 
 	stats.Lock()
 	stats.processed++
@@ -362,4 +379,3 @@ func (s *BalanceNotificationScheduler) processUser(ctx context.Context, user mod
 	// Small delay to avoid rate limiting
 	time.Sleep(50 * time.Millisecond)
 }
-

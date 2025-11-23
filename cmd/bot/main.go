@@ -18,17 +18,21 @@ import (
 )
 
 func main() {
+	// Initialize basic logger first
+	utils.InitLogger("info")
+
 	// Load .env file
 	if err := godotenv.Load(); err != nil {
 		// .env file is optional, continue if it doesn't exist
 		// Variables can be set directly in environment
+		utils.Logger.WithError(err).Warn("Failed to load .env file (this is expected if relying on system env vars)")
+	} else {
+		utils.Logger.Info("Loaded .env file")
 	}
 
 	// Load configuration first to get log level
 	config, err := utils.LoadConfig()
 	if err != nil {
-		// Use basic logger if config fails
-		utils.InitLogger("info")
 		utils.Logger.WithError(err).Fatal("Failed to load configuration")
 		return
 	}

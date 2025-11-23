@@ -6,31 +6,33 @@ import (
 	"strconv"
 	"strings"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"provbot/internal/handlers"
 	"provbot/internal/repository"
+	"provbot/internal/service"
 	"provbot/internal/state"
 	"provbot/internal/utils"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type BillingHandler struct {
-	billingRepo  *repository.BillingRepository
-	userRepo     *repository.UserRepository
-	stateManager *state.StateManager
-	config       *utils.Config
+	billingService *service.BillingService
+	userRepo       *repository.UserRepository
+	stateManager   *state.StateManager
+	config         *utils.Config
 }
 
 func NewBillingHandler(
-	billingRepo *repository.BillingRepository,
+	billingService *service.BillingService,
 	userRepo *repository.UserRepository,
 	stateManager *state.StateManager,
 	config *utils.Config,
 ) *BillingHandler {
 	return &BillingHandler{
-		billingRepo:  billingRepo,
-		userRepo:     userRepo,
-		stateManager: stateManager,
-		config:       config,
+		billingService: billingService,
+		userRepo:       userRepo,
+		stateManager:   stateManager,
+		config:         config,
 	}
 }
 
@@ -85,7 +87,7 @@ func (h *BillingHandler) HandleBalanceChangeInput(ctx *handlers.HandlerContext, 
 	}
 
 	// Update balance
-	err = h.billingRepo.UpdateBalance(context.Background(), userID, amount)
+	err = h.billingService.UpdateBalance(context.Background(), userID, amount)
 	if err != nil {
 		utils.Logger.WithError(err).Error("Failed to update balance")
 		msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, ctx.Translator.Get("error"))
@@ -94,7 +96,7 @@ func (h *BillingHandler) HandleBalanceChangeInput(ctx *handlers.HandlerContext, 
 	}
 
 	// Get updated user info
-	billingUser, err := h.billingRepo.GetUserByID(context.Background(), userID)
+	billingUser, err := h.billingService.GetUserByID(context.Background(), userID)
 	if err == nil && billingUser != nil {
 		text := ctx.Translator.Getf("admin_balance_updated", amount, billingUser.Balance)
 		msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, text)
@@ -129,11 +131,9 @@ func (h *BillingHandler) HandleTemporaryPayment(ctx *handlers.HandlerContext, ca
 
 	// If no contract in state, try to get from billing user
 	if contract == "" {
-		billingUser, err := h.billingRepo.GetUserByID(context.Background(), userID)
+		billingUser, err := h.billingService.GetUserByID(context.Background(), userID)
 		if err == nil && billingUser != nil {
-			// Try to get contract - this depends on billing DB structure
-			// For now, we'll use a placeholder
-			contract = fmt.Sprintf("%d", userID)
+			contract = billingUser.Contract
 		}
 	}
 
@@ -144,7 +144,7 @@ func (h *BillingHandler) HandleTemporaryPayment(ctx *handlers.HandlerContext, ca
 	}
 
 	// Enable temporary payment
-	success, amount, err := h.billingRepo.EnableTemporaryPayment(context.Background(), contract)
+	success, err := h.billingService.TemporaryPay(context.Background(), contract)
 	if err != nil {
 		utils.Logger.WithError(err).Error("Failed to enable temporary payment")
 		msg := tgbotapi.NewMessage(ctx.Update.CallbackQuery.Message.Chat.ID, ctx.Translator.Get("error"))
@@ -157,7 +157,8 @@ func (h *BillingHandler) HandleTemporaryPayment(ctx *handlers.HandlerContext, ca
 	_, _ = ctx.Bot.Request(callbackConfig)
 
 	if success {
-		text := ctx.Translator.Getf("admin_temporary_payment_success", amount)
+		// We don't have amount returned from TemporaryPay anymore, just success
+		text := ctx.Translator.Get("admin_temporary_payment_success") // Removed format arg
 		msg := tgbotapi.NewMessage(ctx.Update.CallbackQuery.Message.Chat.ID, text)
 		_, _ = ctx.Bot.Send(msg)
 	} else {
@@ -167,4 +168,3 @@ func (h *BillingHandler) HandleTemporaryPayment(ctx *handlers.HandlerContext, ca
 
 	return nil
 }
-

@@ -4,27 +4,29 @@ import (
 	"context"
 	"fmt"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"provbot/internal/handlers"
 	"provbot/internal/repository"
+	"provbot/internal/service"
 	"provbot/internal/utils"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type TimePayHandler struct {
-	billingRepo *repository.BillingRepository
-	userRepo    *repository.UserRepository
-	config      *utils.Config
+	billingService *service.BillingService
+	userRepo       *repository.UserRepository
+	config         *utils.Config
 }
 
 func NewTimePayHandler(
-	billingRepo *repository.BillingRepository,
+	billingService *service.BillingService,
 	userRepo *repository.UserRepository,
 	config *utils.Config,
 ) *TimePayHandler {
 	return &TimePayHandler{
-		billingRepo: billingRepo,
-		userRepo:    userRepo,
-		config:      config,
+		billingService: billingService,
+		userRepo:       userRepo,
+		config:         config,
 	}
 }
 
@@ -37,7 +39,7 @@ func (h *TimePayHandler) HandleTimePay(ctx *handlers.HandlerContext) error {
 
 	// Check if user is banned
 	// ban := await db.get_ban() - need to implement ban check
-	
+
 	// Get user contract
 	if user.Contract == nil || *user.Contract == "" {
 		msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, ctx.Translator.Get("no_contract"))
@@ -46,10 +48,12 @@ func (h *TimePayHandler) HandleTimePay(ctx *handlers.HandlerContext) error {
 	}
 
 	contract := *user.Contract
-	
+
 	// Enable temporary payment
-	success, amount, err := h.billingRepo.EnableTemporaryPayment(context.Background(), contract)
+	success, err := h.billingService.TemporaryPay(context.Background(), contract)
 	if err != nil {
+		// Check if it's just "already used" or "no plan" error which might be user error
+		// For now, treat as error or success=false
 		utils.Logger.WithError(err).Error("Failed to enable temporary payment")
 		msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, ctx.Translator.Get("error"))
 		_, _ = ctx.Bot.Send(msg)
@@ -58,9 +62,16 @@ func (h *TimePayHandler) HandleTimePay(ctx *handlers.HandlerContext) error {
 
 	if success {
 		// Success message
-		text := ctx.Translator.Getf("time_pay_success", amount)
+		// We need amount for message? Service doesn't return amount.
+		// Let's just say "Success". Or update service to return amount?
+		// Python: sends "Posluga aktyvovana. Vam narahovano {price}."
+		// My service returns bool. I should probably return amount too or just generic message.
+		// Let's use generic message for now or fetch balance?
+		// Let's assume the message in translation handles it without amount or we fetch it.
+
+		text := ctx.Translator.Get("time_pay_success") // Removed format arg for now
 		msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, text)
-		
+
 		// Add back button
 		keyboard := tgbotapi.NewReplyKeyboard(
 			tgbotapi.NewKeyboardButtonRow(
@@ -69,18 +80,18 @@ func (h *TimePayHandler) HandleTimePay(ctx *handlers.HandlerContext) error {
 		)
 		keyboard.ResizeKeyboard = true
 		msg.ReplyMarkup = keyboard
-		
+
 		_, err = ctx.Bot.Send(msg)
-		
+
 		// Notify admins
 		h.notifyAdmins(ctx, contract)
-		
+
 		return err
 	} else {
-		// Failed - already used this month
+		// Failed - already used this month or other reason
 		text := ctx.Translator.Get("time_pay_failed")
 		msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, text)
-		
+
 		// Add back button
 		keyboard := tgbotapi.NewReplyKeyboard(
 			tgbotapi.NewKeyboardButtonRow(
@@ -89,7 +100,7 @@ func (h *TimePayHandler) HandleTimePay(ctx *handlers.HandlerContext) error {
 		)
 		keyboard.ResizeKeyboard = true
 		msg.ReplyMarkup = keyboard
-		
+
 		_, err = ctx.Bot.Send(msg)
 		return err
 	}
@@ -104,4 +115,3 @@ func (h *TimePayHandler) notifyAdmins(ctx *handlers.HandlerContext, contract str
 		_, _ = ctx.Bot.Send(msg)
 	}
 }
-

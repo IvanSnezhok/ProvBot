@@ -15,17 +15,16 @@ func NewBillingRepository() *BillingRepository {
 	return &BillingRepository{}
 }
 
-// GetUserByTelegramID retrieves billing user by Telegram ID
-// Note: This assumes there's a mapping table or field in billing DB
-func (r *BillingRepository) GetUserByTelegramID(ctx context.Context, telegramID int64) (*models.BillingUser, error) {
-	// This is a placeholder - actual query depends on billing DB structure
-	query := `SELECT id, username, balance, status, service_id, created_at, updated_at 
-	          FROM users WHERE telegram_id = ? LIMIT 1`
-	
+// GetUserByContract retrieves billing user by contract number
+func (r *BillingRepository) GetUserByContract(ctx context.Context, contract string) (*models.BillingUser, error) {
+	query := `SELECT id, contract, fio, telefon, balance, paket, state, t_pay, start_day, srvs, address, grp 
+	          FROM users WHERE contract = ? LIMIT 1`
+
 	var user models.BillingUser
-	err := database.MySQLDB.QueryRowContext(ctx, query, telegramID).Scan(
-		&user.ID, &user.Username, &user.Balance, &user.Status,
-		&user.ServiceID, &user.CreatedAt, &user.UpdatedAt,
+	err := database.MySQLDB.QueryRowContext(ctx, query, contract).Scan(
+		&user.ID, &user.Contract, &user.Name, &user.Phone, &user.Balance,
+		&user.PlanID, &user.Status, &user.TimePay, &user.StartDay, &user.Services,
+		&user.Address, &user.Group,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -37,156 +36,131 @@ func (r *BillingRepository) GetUserByTelegramID(ctx context.Context, telegramID 
 }
 
 // GetUserByID retrieves billing user by ID
-func (r *BillingRepository) GetUserByID(ctx context.Context, userID int64) (*models.BillingUser, error) {
-	query := `SELECT id, username, balance, status, service_id, created_at, updated_at 
+func (r *BillingRepository) GetUserByID(ctx context.Context, id int64) (*models.BillingUser, error) {
+	query := `SELECT id, contract, fio, telefon, balance, paket, state, t_pay, start_day, srvs, address, grp 
 	          FROM users WHERE id = ? LIMIT 1`
-	
+
 	var user models.BillingUser
-	err := database.MySQLDB.QueryRowContext(ctx, query, userID).Scan(
-		&user.ID, &user.Username, &user.Balance, &user.Status,
-		&user.ServiceID, &user.CreatedAt, &user.UpdatedAt,
+	err := database.MySQLDB.QueryRowContext(ctx, query, id).Scan(
+		&user.ID, &user.Contract, &user.Name, &user.Phone, &user.Balance,
+		&user.PlanID, &user.Status, &user.TimePay, &user.StartDay, &user.Services,
+		&user.Address, &user.Group,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to get billing user: %w", err)
+		return nil, fmt.Errorf("failed to get billing user by id: %w", err)
 	}
 	return &user, nil
 }
 
+// GetPlanByID retrieves plan by ID
+func (r *BillingRepository) GetPlanByID(ctx context.Context, planID int64) (*models.BillingPlan, error) {
+	query := `SELECT id, price FROM plans2 WHERE id = ?`
+
+	var plan models.BillingPlan
+	err := database.MySQLDB.QueryRowContext(ctx, query, planID).Scan(&plan.ID, &plan.Price)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to get plan: %w", err)
+	}
+	return &plan, nil
+}
+
 // UpdateBalance updates user balance
-func (r *BillingRepository) UpdateBalance(ctx context.Context, userID int64, amount float64) error {
-	query := `UPDATE users SET balance = balance + ?, updated_at = NOW() WHERE id = ?`
-	
-	result, err := database.MySQLDB.ExecContext(ctx, query, amount, userID)
+func (r *BillingRepository) UpdateBalance(ctx context.Context, contract string, newBalance float64) error {
+	query := `UPDATE users SET balance = ? WHERE contract = ?`
+
+	_, err := database.MySQLDB.ExecContext(ctx, query, newBalance, contract)
 	if err != nil {
 		return fmt.Errorf("failed to update balance: %w", err)
 	}
-	
-	rowsAffected, err := result.RowsAffected()
+	return nil
+}
+
+// AddPayment adds a payment record
+func (r *BillingRepository) AddPayment(ctx context.Context, pay *models.BillingPay) error {
+	query := `INSERT INTO pays (mid, cash, time, admin, reason, coment, bonus, flag) 
+	          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+
+	_, err := database.MySQLDB.ExecContext(ctx, query,
+		pay.UserID, pay.Amount, pay.Time, pay.Admin, pay.Reason, pay.Comment, pay.Bonus, pay.Flag)
 	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
-	if rowsAffected == 0 {
-		return fmt.Errorf("user not found")
+		return fmt.Errorf("failed to add payment: %w", err)
 	}
 	return nil
 }
 
-// GetServicesByUserID retrieves services for a user
-func (r *BillingRepository) GetServicesByUserID(ctx context.Context, userID int64) ([]models.BillingService, error) {
-	query := `SELECT id, user_id, name, status, location, ip_address, created_at, updated_at 
-	          FROM services WHERE user_id = ?`
-	
-	rows, err := database.MySQLDB.QueryContext(ctx, query, userID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get services: %w", err)
-	}
-	defer rows.Close()
-
-	var services []models.BillingService
-	for rows.Next() {
-		var service models.BillingService
-		err := rows.Scan(
-			&service.ID, &service.UserID, &service.Name, &service.Status,
-			&service.Location, &service.IPAddress, &service.CreatedAt, &service.UpdatedAt,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan service: %w", err)
-		}
-		services = append(services, service)
-	}
-	return services, nil
-}
-
-// UpdateServiceStatus updates service status
-func (r *BillingRepository) UpdateServiceStatus(ctx context.Context, serviceID int64, status string) error {
-	query := `UPDATE services SET status = ?, updated_at = NOW() WHERE id = ?`
-	
-	result, err := database.MySQLDB.ExecContext(ctx, query, status, serviceID)
-	if err != nil {
-		return fmt.Errorf("failed to update service status: %w", err)
-	}
-	
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
-	if rowsAffected == 0 {
-		return fmt.Errorf("service not found")
-	}
-	return nil
-}
-
-// UpdateUserStatus updates user status in billing
-func (r *BillingRepository) UpdateUserStatus(ctx context.Context, userID int64, status string) error {
-	query := `UPDATE users SET status = ?, updated_at = NOW() WHERE id = ?`
-	
-	result, err := database.MySQLDB.ExecContext(ctx, query, status, userID)
+// SetUserStatus updates user status (state)
+func (r *BillingRepository) SetUserStatus(ctx context.Context, contract string, status string) error {
+	query := `UPDATE users SET state = ? WHERE contract = ?`
+	_, err := database.MySQLDB.ExecContext(ctx, query, status, contract)
 	if err != nil {
 		return fmt.Errorf("failed to update user status: %w", err)
 	}
-	
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("failed to get rows affected: %w", err)
-	}
-	if rowsAffected == 0 {
-		return fmt.Errorf("user not found")
-	}
 	return nil
 }
 
-// SearchByPhone searches user in billing by phone number
-// Returns user data, contract number, and error
-func (r *BillingRepository) SearchByPhone(ctx context.Context, phone string) (*models.BillingUser, string, error) {
-	// This is a placeholder - actual query depends on billing DB structure
-	// Assuming there's a phone field in users table
-	query := `SELECT id, username, balance, status, service_id, created_at, updated_at, contract 
-	          FROM users WHERE phone = ? LIMIT 1`
-	
-	var user models.BillingUser
-	var contract string
-	err := database.MySQLDB.QueryRowContext(ctx, query, phone).Scan(
-		&user.ID, &user.Username, &user.Balance, &user.Status,
-		&user.ServiceID, &user.CreatedAt, &user.UpdatedAt, &contract,
-	)
-	if err == sql.ErrNoRows {
-		return nil, "", nil
-	}
+// EnableTemporaryPayment enables temporary payment
+func (r *BillingRepository) EnableTemporaryPayment(ctx context.Context, contract string, balance float64) error {
+	tx, err := database.MySQLDB.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to search by phone: %w", err)
+		return err
 	}
-	return &user, contract, nil
+	defer tx.Rollback()
+
+	// Update balance
+	_, err = tx.ExecContext(ctx, `UPDATE users SET balance = ? WHERE contract = ?`, balance, contract)
+	if err != nil {
+		return err
+	}
+
+	// Set state to 'on'
+	_, err = tx.ExecContext(ctx, `UPDATE users SET state = 'on' WHERE contract = ?`, contract)
+	if err != nil {
+		return err
+	}
+
+	// Set t_pay to 1
+	_, err = tx.ExecContext(ctx, `UPDATE users SET t_pay = 1 WHERE contract = ?`, contract)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
-// SearchByContract searches user in billing by contract number
-func (r *BillingRepository) SearchByContract(ctx context.Context, contract string) (*models.BillingUser, error) {
-	query := `SELECT id, username, balance, status, service_id, created_at, updated_at 
-	          FROM users WHERE contract = ? LIMIT 1`
-	
+// SearchByPhone searches user in billing by phone number
+func (r *BillingRepository) SearchByPhone(ctx context.Context, phone string) (*models.BillingUser, error) {
+	query := `SELECT id, contract, fio, telefon, balance, paket, state, t_pay, start_day, srvs, address, grp 
+	          FROM users WHERE telefon LIKE ? LIMIT 1`
+
+	// Python uses exact match or like? Usually phone search is exact or ends with.
+	// Assuming exact match for now or simple LIKE
 	var user models.BillingUser
-	err := database.MySQLDB.QueryRowContext(ctx, query, contract).Scan(
-		&user.ID, &user.Username, &user.Balance, &user.Status,
-		&user.ServiceID, &user.CreatedAt, &user.UpdatedAt,
+	err := database.MySQLDB.QueryRowContext(ctx, query, "%"+phone).Scan(
+		&user.ID, &user.Contract, &user.Name, &user.Phone, &user.Balance,
+		&user.PlanID, &user.Status, &user.TimePay, &user.StartDay, &user.Services,
+		&user.Address, &user.Group,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to search by contract: %w", err)
+		return nil, fmt.Errorf("failed to search by phone: %w", err)
 	}
 	return &user, nil
 }
 
 // SearchByName searches users in billing by name
 func (r *BillingRepository) SearchByName(ctx context.Context, name string) ([]models.BillingUser, error) {
-	query := `SELECT id, username, balance, status, service_id, created_at, updated_at 
+	query := `SELECT id, contract, fio, telefon, balance, paket, state, t_pay, start_day, srvs, address, grp 
 	          FROM users WHERE fio LIKE ? LIMIT 10`
-	
-	searchPattern := "%" + name + "%"
-	rows, err := database.MySQLDB.QueryContext(ctx, query, searchPattern)
+
+	rows, err := database.MySQLDB.QueryContext(ctx, query, "%"+name+"%")
 	if err != nil {
 		return nil, fmt.Errorf("failed to search by name: %w", err)
 	}
@@ -196,8 +170,9 @@ func (r *BillingRepository) SearchByName(ctx context.Context, name string) ([]mo
 	for rows.Next() {
 		var user models.BillingUser
 		err := rows.Scan(
-			&user.ID, &user.Username, &user.Balance, &user.Status,
-			&user.ServiceID, &user.CreatedAt, &user.UpdatedAt,
+			&user.ID, &user.Contract, &user.Name, &user.Phone, &user.Balance,
+			&user.PlanID, &user.Status, &user.TimePay, &user.StartDay, &user.Services,
+			&user.Address, &user.Group,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan user: %w", err)
@@ -209,11 +184,10 @@ func (r *BillingRepository) SearchByName(ctx context.Context, name string) ([]mo
 
 // SearchByAddress searches users in billing by address
 func (r *BillingRepository) SearchByAddress(ctx context.Context, address string) ([]models.BillingUser, error) {
-	query := `SELECT id, username, balance, status, service_id, created_at, updated_at 
+	query := `SELECT id, contract, fio, telefon, balance, paket, state, t_pay, start_day, srvs, address, grp 
 	          FROM users WHERE address LIKE ? LIMIT 10`
-	
-	searchPattern := "%" + address + "%"
-	rows, err := database.MySQLDB.QueryContext(ctx, query, searchPattern)
+
+	rows, err := database.MySQLDB.QueryContext(ctx, query, "%"+address+"%")
 	if err != nil {
 		return nil, fmt.Errorf("failed to search by address: %w", err)
 	}
@@ -223,8 +197,9 @@ func (r *BillingRepository) SearchByAddress(ctx context.Context, address string)
 	for rows.Next() {
 		var user models.BillingUser
 		err := rows.Scan(
-			&user.ID, &user.Username, &user.Balance, &user.Status,
-			&user.ServiceID, &user.CreatedAt, &user.UpdatedAt,
+			&user.ID, &user.Contract, &user.Name, &user.Phone, &user.Balance,
+			&user.PlanID, &user.Status, &user.TimePay, &user.StartDay, &user.Services,
+			&user.Address, &user.Group,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan user: %w", err)
@@ -234,65 +209,29 @@ func (r *BillingRepository) SearchByAddress(ctx context.Context, address string)
 	return users, nil
 }
 
-// CheckContractExists checks if contract exists in billing
-func (r *BillingRepository) CheckContractExists(ctx context.Context, contract string) (bool, error) {
-	query := `SELECT COUNT(*) FROM users WHERE contract = ?`
-	var count int
-	err := database.MySQLDB.QueryRowContext(ctx, query, contract).Scan(&count)
-	if err != nil {
-		return false, fmt.Errorf("failed to check contract: %w", err)
-	}
-	return count > 0, nil
-}
+// GetUsersByGroup retrieves users by group ID
+func (r *BillingRepository) GetUsersByGroup(ctx context.Context, groupID int) ([]models.BillingUser, error) {
+	query := `SELECT id, contract, fio, telefon, balance, paket, state, t_pay, start_day, srvs, address, grp 
+	          FROM users WHERE grp = ?`
 
-// GetTariffByContract gets tariff name by contract
-func (r *BillingRepository) GetTariffByContract(ctx context.Context, contract string) (string, error) {
-	query := `SELECT tariff FROM users WHERE contract = ? LIMIT 1`
-	var tariff string
-	err := database.MySQLDB.QueryRowContext(ctx, query, contract).Scan(&tariff)
-	if err == sql.ErrNoRows {
-		return "", nil
-	}
+	rows, err := database.MySQLDB.QueryContext(ctx, query, groupID)
 	if err != nil {
-		return "", fmt.Errorf("failed to get tariff: %w", err)
+		return nil, fmt.Errorf("failed to get users by group: %w", err)
 	}
-	return tariff, nil
-}
+	defer rows.Close()
 
-// EnableTemporaryPayment enables temporary payment for user
-func (r *BillingRepository) EnableTemporaryPayment(ctx context.Context, contract string) (bool, float64, error) {
-	// This is a placeholder - actual implementation depends on billing system
-	// Should enable temporary payment and return success status and amount
-	query := `UPDATE users SET temp_payment = 1, temp_payment_date = NOW() WHERE contract = ?`
-	result, err := database.MySQLDB.ExecContext(ctx, query, contract)
-	if err != nil {
-		return false, 0, fmt.Errorf("failed to enable temporary payment: %w", err)
+	var users []models.BillingUser
+	for rows.Next() {
+		var user models.BillingUser
+		err := rows.Scan(
+			&user.ID, &user.Contract, &user.Name, &user.Phone, &user.Balance,
+			&user.PlanID, &user.Status, &user.TimePay, &user.StartDay, &user.Services,
+			&user.Address, &user.Group,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan user: %w", err)
+		}
+		users = append(users, user)
 	}
-	
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return false, 0, fmt.Errorf("failed to get rows affected: %w", err)
-	}
-	if rowsAffected == 0 {
-		return false, 0, nil
-	}
-	
-	// Get temporary payment amount (placeholder - should come from billing logic)
-	amount := 0.0
-	return true, amount, nil
+	return users, nil
 }
-
-// GetBalanceByContract retrieves user balance by contract number
-func (r *BillingRepository) GetBalanceByContract(ctx context.Context, contract string) (float64, error) {
-	query := `SELECT balance FROM users WHERE contract = ? LIMIT 1`
-	var balance float64
-	err := database.MySQLDB.QueryRowContext(ctx, query, contract).Scan(&balance)
-	if err == sql.ErrNoRows {
-		return 0, nil
-	}
-	if err != nil {
-		return 0, fmt.Errorf("failed to get balance by contract: %w", err)
-	}
-	return balance, nil
-}
-

@@ -1,0 +1,18 @@
+[Unit]
+Description=ProvBot Telegram Bot
+After=network.target
+
+[Service]
+# Change User to the user who will run the bot
+User=root
+# Change WorkingDirectory to where you deployed the bot
+WorkingDirectory=/opt/provbot
+# Path to the executable
+ExecStart=/opt/provbot/provbot-linux
+Restart=always
+RestartSec=5
+# Environment variables can be loaded from a file
+EnvironmentFile=/opt/provbot/.env
+
+[Install]
+WantedBy=multi-user.target

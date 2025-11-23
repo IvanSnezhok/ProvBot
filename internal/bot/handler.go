@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"provbot/internal/handlers"
 	"provbot/internal/handlers/admin"
 	"provbot/internal/handlers/support"
@@ -15,33 +14,35 @@ import (
 	"provbot/internal/service"
 	"provbot/internal/state"
 	"provbot/internal/utils"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 // BotHandler handles bot updates
 type BotHandler struct {
-	bot              *tgbotapi.BotAPI
-	config           *utils.Config
-	userService      *service.UserService
-	billingService   *service.BillingService
-	supportService   *service.SupportService
-	adminService     *service.AdminService
+	bot                 *tgbotapi.BotAPI
+	config              *utils.Config
+	userService         *service.UserService
+	billingService      *service.BillingService
+	supportService      *service.SupportService
+	adminService        *service.AdminService
 	notificationService *service.NotificationService
-	stateManager     *state.StateManager
-	userRepo         *repository.UserRepository
-	billingRepo      *repository.BillingRepository
-	logRepo          *repository.LogRepository
-	
+	stateManager        *state.StateManager
+	userRepo            *repository.UserRepository
+	billingRepo         *repository.BillingRepository
+	logRepo             *repository.LogRepository
+
 	// User handlers
-	startHandler     *user.StartHandler
-	payBillHandler   *user.PayBillHandler
-	timePayHandler   *user.TimePayHandler
+	startHandler       *user.StartHandler
+	payBillHandler     *user.PayBillHandler
+	timePayHandler     *user.TimePayHandler
 	supportChatHandler *support.SupportChatHandler
-	
+
 	// Admin handlers
 	adminPanelHandler *admin.PanelHandler
-	
-	handlers         map[string]HandlerFunc
-	middlewares      []MiddlewareFunc
+
+	handlers    map[string]HandlerFunc
+	middlewares []MiddlewareFunc
 }
 
 // NewBotHandler creates a new bot handler
@@ -59,29 +60,29 @@ func NewBotHandler(
 	logRepo *repository.LogRepository,
 ) *BotHandler {
 	h := &BotHandler{
-		bot:                bot,
-		config:             config,
-		userService:        userService,
-		billingService:     billingService,
-		supportService:     supportService,
-		adminService:       adminService,
+		bot:                 bot,
+		config:              config,
+		userService:         userService,
+		billingService:      billingService,
+		supportService:      supportService,
+		adminService:        adminService,
 		notificationService: notificationService,
-		stateManager:       stateManager,
-		userRepo:           userRepo,
-		billingRepo:        billingRepo,
-		logRepo:            logRepo,
-		handlers:           make(map[string]HandlerFunc),
-		middlewares:        []MiddlewareFunc{},
+		stateManager:        stateManager,
+		userRepo:            userRepo,
+		billingRepo:         billingRepo,
+		logRepo:             logRepo,
+		handlers:            make(map[string]HandlerFunc),
+		middlewares:         []MiddlewareFunc{},
 	}
 
 	// Initialize user handlers
-	h.startHandler = user.NewStartHandler(userService, billingRepo, userRepo, stateManager, config)
-	h.payBillHandler = user.NewPayBillHandler(billingService, billingRepo, userRepo, stateManager, config)
-	h.timePayHandler = user.NewTimePayHandler(billingRepo, userRepo, config)
+	h.startHandler = user.NewStartHandler(userService, billingService, billingRepo, userRepo, stateManager, config)
+	h.payBillHandler = user.NewPayBillHandler(billingService, userRepo, stateManager, config)
+	h.timePayHandler = user.NewTimePayHandler(billingService, userRepo, config)
 	h.supportChatHandler = support.NewSupportChatHandler(logRepo, stateManager, config, bot)
-	
+
 	// Initialize admin handlers
-	h.adminPanelHandler = admin.NewPanelHandler(adminService, billingRepo, userRepo, stateManager, config)
+	h.adminPanelHandler = admin.NewPanelHandler(adminService, billingService, billingRepo, userRepo, stateManager, config)
 
 	h.registerHandlers()
 	return h
@@ -101,7 +102,7 @@ func (h *BotHandler) registerHandlers() {
 	h.handlers["/services"] = h.handleServices
 	h.handlers["/support"] = h.handleSupport
 	h.handlers["/language"] = h.handleLanguage
-	
+
 	// Admin commands
 	h.handlers["/admin"] = h.handleAdmin
 	h.handlers["/broadcast"] = h.handleBroadcast
@@ -160,12 +161,12 @@ func (h *BotHandler) getHandler(update tgbotapi.Update) HandlerFunc {
 				return handler
 			}
 		}
-		
+
 		// Handle contact (phone number)
 		if update.Message.Contact != nil {
 			return h.handleContact
 		}
-		
+
 		// Handle text messages based on state
 		return h.handleTextMessage
 	}
@@ -191,14 +192,14 @@ func (h *BotHandler) handleStart(ctx *BotContext) error {
 		Config:       ctx.Config,
 		StateManager: ctx.StateManager,
 	}
-	
+
 	// If user is admin, show admin panel instead of regular start
 	if ctx.Update.Message != nil && h.config.IsAdmin(ctx.Update.Message.From.ID) {
 		// Clear any existing state
 		ctx.StateManager.ClearState(int64(ctx.Update.Message.From.ID))
 		return h.adminPanelHandler.ShowAdminPanel(handlerCtx)
 	}
-	
+
 	return h.startHandler.HandleStart(handlerCtx)
 }
 
@@ -225,7 +226,7 @@ func (h *BotHandler) handleHelp(ctx *BotContext) error {
 		ctx.Translator.Get("help_support") + "\n" +
 		ctx.Translator.Get("help_language") + "\n" +
 		ctx.Translator.Get("help_help")
-	
+
 	msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, text)
 	_, err := ctx.Bot.Send(msg)
 	return err
@@ -244,7 +245,7 @@ func (h *BotHandler) handleProfile(ctx *BotContext) error {
 	} else {
 		text = ctx.Translator.Getf("profile_id", user.ID)
 	}
-	
+
 	if user.FirstName != nil {
 		lastName := ""
 		if user.LastName != nil {
@@ -252,7 +253,7 @@ func (h *BotHandler) handleProfile(ctx *BotContext) error {
 		}
 		text += "\n" + ctx.Translator.Getf("profile_name", *user.FirstName, lastName)
 	}
-	
+
 	text += "\n" + ctx.Translator.Getf("profile_language", user.Language)
 
 	// Get balance from billing
@@ -282,7 +283,7 @@ func (h *BotHandler) handleBalance(ctx *BotContext) error {
 
 	text := ctx.Translator.Getf("balance_amount", billingUser.Balance)
 	msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, text)
-	
+
 	// Add top-up button
 	keyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
@@ -290,7 +291,7 @@ func (h *BotHandler) handleBalance(ctx *BotContext) error {
 		),
 	)
 	msg.ReplyMarkup = keyboard
-	
+
 	_, err = ctx.Bot.Send(msg)
 	return err
 }
@@ -341,7 +342,7 @@ func (h *BotHandler) handleLanguage(ctx *BotContext) error {
 			tgbotapi.NewInlineKeyboardButtonData(ctx.Translator.Get("language_en"), "lang_en"),
 		),
 	)
-	
+
 	msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, ctx.Translator.Get("language_title"))
 	msg.ReplyMarkup = keyboard
 	_, err := ctx.Bot.Send(msg)
@@ -374,7 +375,7 @@ func (h *BotHandler) handleTextMessage(ctx *BotContext) error {
 			ctx.StateManager.ClearState(int64(ctx.Update.Message.From.ID))
 			return h.adminPanelHandler.ShowAdminPanel(handlerCtx)
 		}
-		
+
 		// Check if admin is connected to an active support chat
 		// This check should happen before admin panel handling
 		if h.supportChatHandler.IsAdminInChat(int64(ctx.Update.Message.From.ID)) {
@@ -388,7 +389,7 @@ func (h *BotHandler) handleTextMessage(ctx *BotContext) error {
 			}
 			return h.supportChatHandler.HandleAdminMessage(supportCtx)
 		}
-		
+
 		// Handle admin panel text messages if not in support chat
 		return h.adminPanelHandler.HandleTextMessage(handlerCtx)
 	}
@@ -451,7 +452,7 @@ func (h *BotHandler) handleTextMessage(ctx *BotContext) error {
 	if ctx.User != nil {
 		userID = &ctx.User.ID
 	}
-	
+
 	if err := h.supportService.CreateTicket(
 		context.Background(),
 		userID,
@@ -463,7 +464,7 @@ func (h *BotHandler) handleTextMessage(ctx *BotContext) error {
 		msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, ctx.Translator.Get("support_sent"))
 		_, _ = ctx.Bot.Send(msg)
 	}
-	
+
 	return nil
 }
 
@@ -514,7 +515,7 @@ func (h *BotHandler) handleCallbackQuery(ctx *BotContext) error {
 			_, _ = ctx.Bot.Request(callbackConfig)
 			return nil
 		}
-		
+
 		userIDStr := strings.TrimPrefix(data, "support_connect_")
 		userID, err := strconv.ParseInt(userIDStr, 10, 64)
 		if err != nil {
@@ -522,7 +523,7 @@ func (h *BotHandler) handleCallbackQuery(ctx *BotContext) error {
 			_, _ = ctx.Bot.Request(callbackConfig)
 			return nil
 		}
-		
+
 		supportCtx := &support.SupportContext{
 			Update:       ctx.Update,
 			User:         ctx.User,
@@ -532,14 +533,14 @@ func (h *BotHandler) handleCallbackQuery(ctx *BotContext) error {
 		}
 		return h.supportChatHandler.HandleAdminConnect(supportCtx, userID)
 	}
-	
+
 	if data == "support_end_chat" {
 		if !h.config.IsAdmin(callback.From.ID) {
 			callbackConfig := tgbotapi.NewCallback(callback.ID, "У вас немає прав доступу")
 			_, _ = ctx.Bot.Request(callbackConfig)
 			return nil
 		}
-		
+
 		supportCtx := &support.SupportContext{
 			Update:       ctx.Update,
 			User:         ctx.User,
@@ -579,7 +580,7 @@ func (h *BotHandler) handlePreCheckout(ctx *BotContext) error {
 	// Always approve for now (should validate in production)
 	answer := tgbotapi.PreCheckoutConfig{
 		PreCheckoutQueryID: query.ID,
-		OK:                  true,
+		OK:                 true,
 	}
 	_, err := ctx.Bot.Request(answer)
 	return err
@@ -611,7 +612,7 @@ func (h *BotHandler) handleSuccessfulPayment(ctx *BotContext) error {
 	utils.Logger.Infof("Payment successful: %.2f UAH, contract: %s", amount, contract)
 
 	// Send confirmation to user
-	msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, 
+	msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID,
 		ctx.Translator.Getf("balance_topup_success", float64(amountKopecks)/100.0))
 	_, _ = ctx.Bot.Send(msg)
 
@@ -723,4 +724,3 @@ func (h *BotHandler) handleUsers(ctx *BotContext) error {
 	}
 	return h.adminPanelHandler.UsersHandler.HandleAccountMenu(handlerCtx)
 }
-

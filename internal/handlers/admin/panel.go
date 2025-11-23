@@ -6,47 +6,51 @@ import (
 	"strconv"
 	"strings"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"provbot/internal/handlers"
 	"provbot/internal/repository"
 	"provbot/internal/service"
 	"provbot/internal/state"
 	"provbot/internal/utils"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type PanelHandler struct {
-	adminService   *service.AdminService
-	billingRepo    *repository.BillingRepository
-	userRepo       *repository.UserRepository
-	stateManager   *state.StateManager
-	config         *utils.Config
-	UsersHandler   *UsersHandler
-	BillingHandler *BillingHandler
+	adminService     *service.AdminService
+	billingService   *service.BillingService
+	billingRepo      *repository.BillingRepository
+	userRepo         *repository.UserRepository
+	stateManager     *state.StateManager
+	config           *utils.Config
+	UsersHandler     *UsersHandler
+	BillingHandler   *BillingHandler
 	BroadcastHandler *BroadcastHandler
-	AccountHandler *AccountHandler
-	LogsHandler    *LogsHandler
+	AccountHandler   *AccountHandler
+	LogsHandler      *LogsHandler
 }
 
 func NewPanelHandler(
 	adminService *service.AdminService,
+	billingService *service.BillingService,
 	billingRepo *repository.BillingRepository,
 	userRepo *repository.UserRepository,
 	stateManager *state.StateManager,
 	config *utils.Config,
 ) *PanelHandler {
 	ph := &PanelHandler{
-		adminService: adminService,
-		billingRepo: billingRepo,
-		userRepo:    userRepo,
-		stateManager: stateManager,
-		config:      config,
+		adminService:   adminService,
+		billingService: billingService,
+		billingRepo:    billingRepo,
+		userRepo:       userRepo,
+		stateManager:   stateManager,
+		config:         config,
 	}
 
 	// Initialize sub-handlers
-	ph.UsersHandler = NewUsersHandler(billingRepo, userRepo, stateManager, config)
-	ph.BillingHandler = NewBillingHandler(billingRepo, userRepo, stateManager, config)
+	ph.UsersHandler = NewUsersHandler(billingService, userRepo, stateManager, config)
+	ph.BillingHandler = NewBillingHandler(billingService, userRepo, stateManager, config)
 	ph.BroadcastHandler = NewBroadcastHandler(userRepo, stateManager, config)
-	ph.AccountHandler = NewAccountHandler(billingRepo, userRepo, stateManager, config)
+	ph.AccountHandler = NewAccountHandler(billingService, userRepo, stateManager, config)
 	ph.LogsHandler = NewLogsHandler(stateManager, config)
 
 	return ph
@@ -86,7 +90,7 @@ func (h *PanelHandler) ShowAdminPanel(ctx *handlers.HandlerContext) error {
 	)
 
 	text := ctx.Translator.Get("admin_panel_title")
-	
+
 	// Get chat ID from Message or CallbackQuery
 	var chatID int64
 	if ctx.Update.Message != nil {
@@ -101,20 +105,20 @@ func (h *PanelHandler) ShowAdminPanel(ctx *handlers.HandlerContext) error {
 
 	msg := tgbotapi.NewMessage(chatID, text)
 	msg.ReplyMarkup = keyboard
-	
+
 	// If it's a callback query, edit the message instead of sending new one
 	if ctx.Update.CallbackQuery != nil && ctx.Update.CallbackQuery.Message != nil {
 		// Answer callback first
 		callbackConfig := tgbotapi.NewCallback(ctx.Update.CallbackQuery.ID, "")
 		_, _ = ctx.Bot.Request(callbackConfig)
-		
+
 		// Edit message
 		editMsg := tgbotapi.NewEditMessageText(chatID, ctx.Update.CallbackQuery.Message.MessageID, text)
 		editMsg.ReplyMarkup = &keyboard
 		_, err := ctx.Bot.Send(editMsg)
 		return err
 	}
-	
+
 	_, err := ctx.Bot.Send(msg)
 	return err
 }
@@ -206,4 +210,3 @@ func isContractNumber(text string) bool {
 	_, err := strconv.Atoi(text)
 	return err == nil
 }
-

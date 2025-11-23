@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"provbot/internal/handlers"
 	"provbot/internal/i18n"
 	"provbot/internal/models"
@@ -13,29 +12,34 @@ import (
 	"provbot/internal/service"
 	"provbot/internal/state"
 	"provbot/internal/utils"
+
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type StartHandler struct {
-	userService   *service.UserService
-	billingRepo   *repository.BillingRepository
-	userRepo      *repository.UserRepository
-	stateManager  *state.StateManager
-	config        *utils.Config
+	userService    *service.UserService
+	billingService *service.BillingService
+	billingRepo    *repository.BillingRepository
+	userRepo       *repository.UserRepository
+	stateManager   *state.StateManager
+	config         *utils.Config
 }
 
 func NewStartHandler(
 	userService *service.UserService,
+	billingService *service.BillingService,
 	billingRepo *repository.BillingRepository,
 	userRepo *repository.UserRepository,
 	stateManager *state.StateManager,
 	config *utils.Config,
 ) *StartHandler {
 	return &StartHandler{
-		userService:  userService,
-		billingRepo: billingRepo,
-		userRepo:    userRepo,
-		stateManager: stateManager,
-		config:      config,
+		userService:    userService,
+		billingService: billingService,
+		billingRepo:    billingRepo,
+		userRepo:       userRepo,
+		stateManager:   stateManager,
+		config:         config,
 	}
 }
 
@@ -49,7 +53,7 @@ func (h *StartHandler) HandleStart(ctx *handlers.HandlerContext) error {
 			tgbotapi.NewInlineKeyboardButtonData("Русский", "start_lang_ru"),
 		),
 	)
-	
+
 	msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, ctx.Translator.Get("start_message"))
 	msg.ReplyMarkup = keyboard
 	_, err := ctx.Bot.Send(msg)
@@ -64,14 +68,14 @@ func (h *StartHandler) HandleLanguageCallback(ctx *handlers.HandlerContext) erro
 	}
 
 	lang := strings.TrimPrefix(callback.Data, "start_lang_")
-	
+
 	// Map callback to language code
 	langMap := map[string]string{
 		"ua": "ua",
 		"en": "en",
 		"ru": "ru",
 	}
-	
+
 	langCode, ok := langMap[lang]
 	if !ok {
 		langCode = i18n.DefaultLanguage
@@ -84,7 +88,7 @@ func (h *StartHandler) HandleLanguageCallback(ctx *handlers.HandlerContext) erro
 
 	// Get translator for selected language
 	translator := i18n.GetGlobalTranslator(langCode)
-	
+
 	// Request phone number
 	contactButton := tgbotapi.NewKeyboardButtonContact(translator.Get("send_phone"))
 	keyboard := tgbotapi.NewReplyKeyboard(
@@ -102,18 +106,18 @@ func (h *StartHandler) HandleLanguageCallback(ctx *handlers.HandlerContext) erro
 	if langName == "" {
 		langName = langCode
 	}
-	
+
 	text := translator.Getf("phone_request", langName)
 	msg := tgbotapi.NewMessage(callback.Message.Chat.ID, text)
 	msg.ReplyMarkup = keyboard
-	
+
 	// Set state
 	h.stateManager.SetState(int64(callback.From.ID), state.StateWaitingPhone, nil)
-	
+
 	// Answer callback
 	callbackConfig := tgbotapi.NewCallback(callback.ID, "")
 	_, _ = ctx.Bot.Request(callbackConfig)
-	
+
 	_, err := ctx.Bot.Send(msg)
 	return err
 }
@@ -177,7 +181,14 @@ func (h *StartHandler) formatPhoneNumber(phone string) string {
 
 // searchInBilling searches user in billing by phone number
 func (h *StartHandler) searchInBilling(phone string) (*models.BillingUser, string, error) {
-	return h.billingRepo.SearchByPhone(context.Background(), phone)
+	user, err := h.billingService.SearchUser(context.Background(), phone)
+	if err != nil {
+		return nil, "", err
+	}
+	if user == nil {
+		return nil, "", nil
+	}
+	return user, user.Contract, nil
 }
 
 // notifyAdmins notifies admins about new user
@@ -188,7 +199,7 @@ func (h *StartHandler) notifyAdmins(ctx *handlers.HandlerContext, user *models.U
 	}
 	message := fmt.Sprintf("Новий клієнт: %s, ID: %d\nЗ номером телефону: %s\n",
 		fullName, ctx.Update.Message.From.ID, phone)
-	
+
 	if found && contract != "" {
 		message += fmt.Sprintf("Клієнт знайдений в білінгу, номер договору: %s\n", contract)
 	} else {
@@ -224,4 +235,3 @@ func (h *StartHandler) ShowMainMenu(ctx *handlers.HandlerContext, hasContract bo
 	_, err := ctx.Bot.Send(msg)
 	return err
 }
-

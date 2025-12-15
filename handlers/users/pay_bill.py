@@ -62,6 +62,7 @@ async def contract_pay(message: types.Message, state: FSMContext):
             await db.message("BOT", 10001, msg.html_text, msg.date)
             msg1 = await message.answer(
                 text=_("Діє акція - поповни рахунок на 6 місяців одним платежем та отримуй 10% від суми поповнення!"))
+            await db.message("BOT", 10001, msg1.html_text, msg1.date)
             invoice_pay = P2100.generate_invoice()
             await state.update_data({'bill_id_p2100': invoice_pay[' start_parameter']})
             await bot.send_invoice(message.from_user.id, **invoice_pay, payload=2100)
@@ -74,12 +75,22 @@ async def contract_pay(message: types.Message, state: FSMContext):
                                     reply_markup=return_button)
             await state.set_state('invoice_payload')
             await db.message("BOT", 10001, msg.html_text, msg.date)
-    except IndexError:
+    except IndexError as e:
+        print(e)
         msg = await message.answer(text=_("Для поповнення рахунку введіть сумму поповненя!\n"
-                                            "Наприклад:\n"
-                                            "250,\n"
-                                            "500\n"),
-                                    reply_markup=return_button)
+                                          "Наприклад:\n"
+                                          "250,\n"
+                                          "500\n"),
+                                   reply_markup=return_button)
+        await state.set_state('invoice_payload')
+        await db.message("BOT", 10001, msg.html_text, msg.date)
+    except Exception as e:
+        print(e)
+        msg = await message.answer(text=_("Для поповнення рахунку введіть сумму поповненя!\n"
+                                          "Наприклад:\n"
+                                          "250,\n"
+                                          "500\n"),
+                                   reply_markup=return_button)
         await state.set_state('invoice_payload')
         await db.message("BOT", 10001, msg.html_text, msg.date)
 
@@ -91,7 +102,6 @@ async def get_invoice_payload(message: types.Message, state: FSMContext):
     await state.set_data({'payload': message.text})
     await state.set_state('invoice_contract')
     await db.message("BOT", 10001, msg.html_text, msg.date)
-
 
 @dp.message_handler(state='invoice_contract')
 @dp.message_handler(state='invalid_payload')

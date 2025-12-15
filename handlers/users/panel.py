@@ -624,7 +624,7 @@ async def message_send_accept_sms(call: types.CallbackQuery, state: FSMContext):
                           "length of string:", len(text))
                     param = {'version': 'http',
                              'login': '380936425274',
-                             "password": "iw79izvy",
+                             "password": "wxgjtqyo",
                              'key': '6cf938587e0ed0d992566730169e82e229f097c7',
                              'command': "send",
                              'from': 'IAura',

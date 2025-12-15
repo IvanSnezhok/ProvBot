@@ -184,7 +184,7 @@ async def send_message_sms(phone: int = None, text: str = None):
                                   "length of string:", len(message_sms_text))
                             param = {'version': 'http',
                                      'login': '380936425274',
-                                     "pass": "iw79izvy",
+                                     "pass": "wxgjtqyo",
                                      "key": '6cf938587e0ed0d992566730169e82e229f097c7',
                                      'command': "send",
                                      'from': 'IAura',
@@ -225,7 +225,7 @@ async def send_message_sms(phone: int = None, text: str = None):
                                   "length of string:", len(message_sms_text))
                             param = {'version': 'http',
                                      'login': '380936425274',
-                                     "password": "iw79izvy",
+                                     "password": "wxgjtqyo",
                                      'command': "send",
                                      'from': 'IAura',
                                      'to': f"{email_phone[i]}",
@@ -265,7 +265,7 @@ async def send_message_sms(phone: int = None, text: str = None):
                               "length of string:", len(message_sms_text))
                         param = {'version': 'http',
                                  'login': '380936425274',
-                                 "password": "iw79izvy",
+                                 "password": "wxgjtqyo",
                                  'command': "send",
                                  'from': 'IAura',
                                  'to': f"{email_phone[i]}",
@@ -316,7 +316,7 @@ async def send_message_sms(phone: int = None, text: str = None):
                           "length of string:", len(message_sms_text))
                     param = {'version': 'http',
                              'login': '380936425274',
-                             "password": "iw79izvy",
+                             "password": "wxgjtqyo",
                              'command': "send",
                              'from': 'IAura',
                              'to': f"{phone}",

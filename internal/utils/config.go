@@ -39,6 +39,12 @@ type Config struct {
 
 	// Scheduler
 	SchedulerWorkers int // Number of workers for parallel processing
+
+	// SMS
+	SMSEnabled bool
+	SMSAPIURL  string
+	SMSAPIKey  string
+	SMSSender  string
 }
 
 // LoadConfig loads configuration from environment variables
@@ -65,6 +71,11 @@ func LoadConfig() (*Config, error) {
 		BotWebhookPort: getEnvAsInt("BOT_WEBHOOK_PORT", 8443),
 		ProviderToken: getEnv("PROVIDER_TOKEN", ""),
 		SchedulerWorkers: getEnvAsInt("SCHEDULER_WORKERS", 10),
+
+		SMSEnabled: getEnvAsBool("SMS_ENABLED", false),
+		SMSAPIURL:  getEnv("SMS_API_URL", ""),
+		SMSAPIKey:  getEnv("SMS_API_KEY", ""),
+		SMSSender:  getEnv("SMS_SENDER", "ProvBot"),
 	}
 
 	// Parse admin IDs
@@ -123,5 +134,17 @@ func getEnvAsInt(key string, defaultValue int) int {
 		return value
 	}
 	return defaultValue
+}
+
+func getEnvAsBool(key string, defaultValue bool) bool {
+	valueStr := getEnv(key, "")
+	if valueStr == "" {
+		return defaultValue
+	}
+	value, err := strconv.ParseBool(valueStr)
+	if err != nil {
+		return defaultValue
+	}
+	return value
 }
 

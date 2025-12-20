@@ -84,6 +84,7 @@ func main() {
 	supportService := service.NewSupportService(logRepo)
 	adminService := service.NewAdminService(userRepo, outageRepo, billingRepo)
 	notificationService := service.NewNotificationService(telegramBot, logRepo, userRepo)
+	outageService := service.NewOutageService(outageRepo)
 
 	// Initialize scheduler for balance notifications
 	balanceScheduler := scheduler.NewBalanceNotificationScheduler(
@@ -107,6 +108,7 @@ func main() {
 		supportService,
 		adminService,
 		notificationService,
+		outageService,
 		stateManager,
 		userRepo,
 		billingRepo,

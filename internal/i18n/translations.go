@@ -96,5 +96,6 @@ const (
 func LoadTranslations() {
 	globalStore.RegisterLanguage(LanguageUA, GetUATranslations())
 	globalStore.RegisterLanguage(LanguageEN, GetENTranslations())
+	globalStore.RegisterLanguage(LanguageRU, GetRUTranslations())
 }
 

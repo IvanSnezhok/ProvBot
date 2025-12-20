@@ -27,6 +27,7 @@ type BotHandler struct {
 	supportService      *service.SupportService
 	adminService        *service.AdminService
 	notificationService *service.NotificationService
+	outageService       *service.OutageService
 	stateManager        *state.StateManager
 	userRepo            *repository.UserRepository
 	billingRepo         *repository.BillingRepository
@@ -36,6 +37,7 @@ type BotHandler struct {
 	startHandler       *user.StartHandler
 	payBillHandler     *user.PayBillHandler
 	timePayHandler     *user.TimePayHandler
+	shopHandler        *user.ShopHandler
 	supportChatHandler *support.SupportChatHandler
 
 	// Admin handlers
@@ -54,6 +56,7 @@ func NewBotHandler(
 	supportService *service.SupportService,
 	adminService *service.AdminService,
 	notificationService *service.NotificationService,
+	outageService *service.OutageService,
 	stateManager *state.StateManager,
 	userRepo *repository.UserRepository,
 	billingRepo *repository.BillingRepository,
@@ -67,6 +70,7 @@ func NewBotHandler(
 		supportService:      supportService,
 		adminService:        adminService,
 		notificationService: notificationService,
+		outageService:       outageService,
 		stateManager:        stateManager,
 		userRepo:            userRepo,
 		billingRepo:         billingRepo,
@@ -76,9 +80,10 @@ func NewBotHandler(
 	}
 
 	// Initialize user handlers
-	h.startHandler = user.NewStartHandler(userService, billingService, billingRepo, userRepo, stateManager, config)
+	h.startHandler = user.NewStartHandler(userService, billingService, outageService, billingRepo, userRepo, stateManager, config)
 	h.payBillHandler = user.NewPayBillHandler(billingService, userRepo, stateManager, config)
 	h.timePayHandler = user.NewTimePayHandler(billingService, userRepo, config)
+	h.shopHandler = user.NewShopHandler()
 	h.supportChatHandler = support.NewSupportChatHandler(logRepo, stateManager, config, bot)
 
 	// Initialize admin handlers
@@ -412,6 +417,8 @@ func (h *BotHandler) handleTextMessage(ctx *BotContext) error {
 			}
 			// Always try to handle as support message if in support state
 			return h.supportChatHandler.HandleSupportMessage(supportCtx)
+		case state.StateWaitingConnectionRequest:
+			return h.startHandler.HandleConnectionRequestInput(handlerCtx)
 		}
 	}
 
@@ -431,6 +438,15 @@ func (h *BotHandler) handleTextMessage(ctx *BotContext) error {
 	}
 	if text == ctx.Translator.Get("menu_time_pay") {
 		return h.timePayHandler.HandleTimePay(handlerCtx)
+	}
+	if text == ctx.Translator.Get("connect_friend") {
+		return h.startHandler.HandleConnectFriend(handlerCtx)
+	}
+	if text == ctx.Translator.Get("connection_request") {
+		return h.startHandler.HandleConnectionRequest(handlerCtx)
+	}
+	if text == ctx.Translator.Get("menu_shop") {
+		return h.shopHandler.HandleShowCategories(handlerCtx)
 	}
 	if text == ctx.Translator.Get("support_end_chat_button") {
 		// User wants to end support chat
@@ -549,6 +565,40 @@ func (h *BotHandler) handleCallbackQuery(ctx *BotContext) error {
 			StateManager: ctx.StateManager,
 		}
 		return h.supportChatHandler.HandleEndChat(supportCtx)
+	}
+
+	// Handle shop callbacks
+	handlerCtx := &handlers.HandlerContext{
+		Bot:          ctx.Bot,
+		Update:       ctx.Update,
+		User:         ctx.User,
+		Translator:   ctx.Translator,
+		Config:       ctx.Config,
+		StateManager: ctx.StateManager,
+	}
+
+	if strings.HasPrefix(data, "shop_cat_") {
+		categoryID := strings.TrimPrefix(data, "shop_cat_")
+		return h.shopHandler.HandleShowCategoryProducts(handlerCtx, categoryID)
+	}
+
+	if strings.HasPrefix(data, "shop_prod_") {
+		productID := strings.TrimPrefix(data, "shop_prod_")
+		return h.shopHandler.HandleShowProductDetails(handlerCtx, productID)
+	}
+
+	if strings.HasPrefix(data, "shop_order_") {
+		productID := strings.TrimPrefix(data, "shop_order_")
+		return h.shopHandler.HandleOrder(handlerCtx, productID)
+	}
+
+	if data == "shop_categories" {
+		return h.shopHandler.HandleShowCategories(handlerCtx)
+	}
+
+	if data == "shop_back" {
+		// Return to main menu
+		return h.startHandler.ShowMainMenu(handlerCtx, ctx.User != nil && ctx.User.Contract != nil)
 	}
 
 	// Handle admin callbacks

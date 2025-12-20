@@ -10,14 +10,15 @@ type UserState string
 
 const (
 	// User states
-	StateNone                 UserState = "NONE"
-	StateWaitingPhone         UserState = "WAITING_PHONE"
-	StateWaitingInvoicePayload UserState = "WAITING_INVOICE_PAYLOAD"
-	StateWaitingInvoiceContract UserState = "WAITING_INVOICE_CONTRACT"
-	StateInvalidPayload       UserState = "INVALID_PAYLOAD"
-	StateWaitingForSupport    UserState = "WAITING_FOR_SUPPORT"
-	StateChatting             UserState = "CHATTING"
-	
+	StateNone                    UserState = "NONE"
+	StateWaitingPhone            UserState = "WAITING_PHONE"
+	StateWaitingInvoicePayload   UserState = "WAITING_INVOICE_PAYLOAD"
+	StateWaitingInvoiceContract  UserState = "WAITING_INVOICE_CONTRACT"
+	StateInvalidPayload          UserState = "INVALID_PAYLOAD"
+	StateWaitingForSupport       UserState = "WAITING_FOR_SUPPORT"
+	StateChatting                UserState = "CHATTING"
+	StateWaitingConnectionRequest UserState = "WAITING_CONNECTION_REQUEST"
+
 	// Admin states
 	StateSearchContract       UserState = "SEARCH_CONTRACT"
 	StateSearchPhone          UserState = "SEARCH_PHONE"

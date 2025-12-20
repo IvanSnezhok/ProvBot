@@ -72,7 +72,7 @@ func (s *UserService) UpdateLanguage(ctx context.Context, telegramID int64, lang
 	}
 
 	// Validate language
-	if language != i18n.LanguageUA && language != i18n.LanguageEN {
+	if language != i18n.LanguageUA && language != i18n.LanguageEN && language != i18n.LanguageRU {
 		language = i18n.DefaultLanguage
 	}
 
@@ -86,5 +86,20 @@ func (s *UserService) UpdateLanguage(ctx context.Context, telegramID int64, lang
 // IsAdmin checks if user is admin
 func (s *UserService) IsAdmin(ctx context.Context, telegramID int64) (bool, error) {
 	return s.userRepo.IsAdmin(ctx, telegramID)
+}
+
+// IsBanned checks if user is banned
+func (s *UserService) IsBanned(ctx context.Context, telegramID int64) (bool, error) {
+	return s.userRepo.IsBanned(ctx, telegramID)
+}
+
+// SetBan sets ban status for a user
+func (s *UserService) SetBan(ctx context.Context, telegramID int64, banned bool) error {
+	return s.userRepo.SetBan(ctx, telegramID, banned)
+}
+
+// GetBannedUsers retrieves all banned users
+func (s *UserService) GetBannedUsers(ctx context.Context) ([]models.User, error) {
+	return s.userRepo.GetBannedUsers(ctx)
 }
 

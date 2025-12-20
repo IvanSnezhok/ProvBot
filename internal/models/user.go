@@ -4,17 +4,18 @@ import "time"
 
 // User represents a bot user
 type User struct {
-	ID         int       `json:"id"`
-	TelegramID int64     `json:"telegram_id" db:"telegram_id"`
-	Username   *string   `json:"username"`
-	FirstName  *string   `json:"first_name" db:"first_name"`
-	LastName   *string   `json:"last_name" db:"last_name"`
-	PhoneNumber *string  `json:"phone_number" db:"phone_number"`
-	Contract   *string   `json:"contract" db:"contract"`
-	Language   string    `json:"language"`
-	IsActive   bool      `json:"is_active" db:"is_active"`
-	CreatedAt  time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at" db:"updated_at"`
+	ID          int       `json:"id"`
+	TelegramID  int64     `json:"telegram_id" db:"telegram_id"`
+	Username    *string   `json:"username"`
+	FirstName   *string   `json:"first_name" db:"first_name"`
+	LastName    *string   `json:"last_name" db:"last_name"`
+	PhoneNumber *string   `json:"phone_number" db:"phone_number"`
+	Contract    *string   `json:"contract" db:"contract"`
+	Language    string    `json:"language"`
+	IsActive    bool      `json:"is_active" db:"is_active"`
+	IsBanned    bool      `json:"is_banned" db:"is_banned"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at" db:"updated_at"`
 }
 
 // AdminUser represents an admin user

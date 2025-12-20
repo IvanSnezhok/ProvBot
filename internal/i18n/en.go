@@ -65,6 +65,8 @@ func GetENTranslations() map[string]string {
 		"service_active":    "Active",
 		"service_suspended": "Suspended",
 		"service_inactive":  "Inactive",
+		"service_on":        "On",
+		"service_off":       "Off",
 		
 		// Support
 		"support_title":     "Support",
@@ -145,6 +147,7 @@ func GetENTranslations() map[string]string {
 		"outage_location":   "Location: %s",
 		"outage_description": "Description: %s",
 		"outage_status":     "Status: %s",
+		"outage_warning":    "⚠️ WARNING! There is an outage at your address:",
 		
 		// Help
 		"help_title":        "Available commands:",
@@ -158,6 +161,26 @@ func GetENTranslations() map[string]string {
 
 		// Balance notifications
 		"balance_notification_message": "⚠️ Warning! Your balance is low (%.2f UAH). Possible service blocking on the 12th. We recommend topping up your account.",
+
+		// Connect friend
+		"connect_friend":       "Connect Friend",
+		"connect_friend_promo": "<b>Connect a friend to our internet network</b> - receive the cost of your current tariff plan to your account. When applying for connection, the person needs to specify your connection details (choice of: contract number %s or connection address %s). After the actual connection of the \"Friend\" to our network, your personal account will be automatically topped up by the cost of your current tariff plan. The \"Switch\" promotion also applies.",
+
+		// Connection request
+		"connection_request":        "Submit Connection Request",
+		"connection_request_prompt": "Enter your full name and phone number - we will contact you for connection",
+		"connection_request_sent":   "Request is being processed, please wait for our call\nYou can return to the main menu by pressing the button below",
+		"not_found_billing":         "Your phone number was not found in our billing system\nIf you want to connect - submit a connection request by pressing the button",
+
+		// Shop
+		"menu_shop":               "Shop",
+		"shop_categories":         "Select product category:",
+		"shop_products_in_category": "Products in category",
+		"shop_no_products":        "No products in this category",
+		"shop_product_not_found":  "Product not found",
+		"shop_price":              "Price",
+		"shop_order":              "Order",
+		"shop_order_message":      "To order '%s' please contact support via chat or call us.",
 	}
 }
 

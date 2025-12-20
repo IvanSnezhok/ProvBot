@@ -18,13 +18,13 @@ func NewUserRepository() *UserRepository {
 
 // GetByTelegramID retrieves a user by Telegram ID
 func (r *UserRepository) GetByTelegramID(ctx context.Context, telegramID int64) (*models.User, error) {
-	query := `SELECT id, telegram_id, username, first_name, last_name, phone_number, contract, language, is_active, created_at, updated_at 
+	query := `SELECT id, telegram_id, username, first_name, last_name, phone_number, contract, language, is_active, COALESCE(is_banned, false), created_at, updated_at
 	          FROM users WHERE telegram_id = $1`
-	
+
 	var user models.User
 	err := database.PostgresDB.QueryRow(ctx, query, telegramID).Scan(
 		&user.ID, &user.TelegramID, &user.Username, &user.FirstName, &user.LastName,
-		&user.PhoneNumber, &user.Contract, &user.Language, &user.IsActive, &user.CreatedAt, &user.UpdatedAt,
+		&user.PhoneNumber, &user.Contract, &user.Language, &user.IsActive, &user.IsBanned, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err == pgx.ErrNoRows {
 		return nil, nil
@@ -81,9 +81,9 @@ func (r *UserRepository) IsAdmin(ctx context.Context, telegramID int64) (bool, e
 
 // GetAllActiveUsers retrieves all active users
 func (r *UserRepository) GetAllActiveUsers(ctx context.Context) ([]models.User, error) {
-	query := `SELECT id, telegram_id, username, first_name, last_name, phone_number, contract, language, is_active, created_at, updated_at 
+	query := `SELECT id, telegram_id, username, first_name, last_name, phone_number, contract, language, is_active, COALESCE(is_banned, false), created_at, updated_at
 	          FROM users WHERE is_active = true`
-	
+
 	rows, err := database.PostgresDB.Query(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get active users: %w", err)
@@ -95,7 +95,7 @@ func (r *UserRepository) GetAllActiveUsers(ctx context.Context) ([]models.User, 
 		var user models.User
 		err := rows.Scan(
 			&user.ID, &user.TelegramID, &user.Username, &user.FirstName, &user.LastName,
-			&user.PhoneNumber, &user.Contract, &user.Language, &user.IsActive, &user.CreatedAt, &user.UpdatedAt,
+			&user.PhoneNumber, &user.Contract, &user.Language, &user.IsActive, &user.IsBanned, &user.CreatedAt, &user.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan user: %w", err)
@@ -107,9 +107,9 @@ func (r *UserRepository) GetAllActiveUsers(ctx context.Context) ([]models.User, 
 
 // GetUsersWithContracts retrieves all active users with contracts
 func (r *UserRepository) GetUsersWithContracts(ctx context.Context) ([]models.User, error) {
-	query := `SELECT id, telegram_id, username, first_name, last_name, phone_number, contract, language, is_active, created_at, updated_at 
+	query := `SELECT id, telegram_id, username, first_name, last_name, phone_number, contract, language, is_active, COALESCE(is_banned, false), created_at, updated_at
 	          FROM users WHERE is_active = true AND contract IS NOT NULL AND contract != ''`
-	
+
 	rows, err := database.PostgresDB.Query(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get users with contracts: %w", err)
@@ -121,7 +121,7 @@ func (r *UserRepository) GetUsersWithContracts(ctx context.Context) ([]models.Us
 		var user models.User
 		err := rows.Scan(
 			&user.ID, &user.TelegramID, &user.Username, &user.FirstName, &user.LastName,
-			&user.PhoneNumber, &user.Contract, &user.Language, &user.IsActive, &user.CreatedAt, &user.UpdatedAt,
+			&user.PhoneNumber, &user.Contract, &user.Language, &user.IsActive, &user.IsBanned, &user.CreatedAt, &user.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan user: %w", err)
@@ -129,5 +129,55 @@ func (r *UserRepository) GetUsersWithContracts(ctx context.Context) ([]models.Us
 		users = append(users, user)
 	}
 	return users, nil
+}
+
+// GetBannedUsers retrieves all banned users
+func (r *UserRepository) GetBannedUsers(ctx context.Context) ([]models.User, error) {
+	query := `SELECT id, telegram_id, username, first_name, last_name, phone_number, contract, language, is_active, COALESCE(is_banned, false), created_at, updated_at
+	          FROM users WHERE is_banned = true`
+
+	rows, err := database.PostgresDB.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get banned users: %w", err)
+	}
+	defer rows.Close()
+
+	var users []models.User
+	for rows.Next() {
+		var user models.User
+		err := rows.Scan(
+			&user.ID, &user.TelegramID, &user.Username, &user.FirstName, &user.LastName,
+			&user.PhoneNumber, &user.Contract, &user.Language, &user.IsActive, &user.IsBanned, &user.CreatedAt, &user.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan user: %w", err)
+		}
+		users = append(users, user)
+	}
+	return users, nil
+}
+
+// SetBan sets the ban status for a user
+func (r *UserRepository) SetBan(ctx context.Context, telegramID int64, banned bool) error {
+	query := `UPDATE users SET is_banned = $1, updated_at = $2 WHERE telegram_id = $3`
+	_, err := database.PostgresDB.Exec(ctx, query, banned, time.Now(), telegramID)
+	if err != nil {
+		return fmt.Errorf("failed to set ban status: %w", err)
+	}
+	return nil
+}
+
+// IsBanned checks if a user is banned
+func (r *UserRepository) IsBanned(ctx context.Context, telegramID int64) (bool, error) {
+	query := `SELECT COALESCE(is_banned, false) FROM users WHERE telegram_id = $1`
+	var isBanned bool
+	err := database.PostgresDB.QueryRow(ctx, query, telegramID).Scan(&isBanned)
+	if err == pgx.ErrNoRows {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("failed to check ban status: %w", err)
+	}
+	return isBanned, nil
 }
 

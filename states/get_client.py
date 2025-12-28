@@ -12,3 +12,9 @@ class Request(StatesGroup):
 class SupportChat(StatesGroup):
     WaitingForSupport = State()
     Chatting = State()
+
+
+class BroadcastStates(StatesGroup):
+    WaitingContent = State()  # Очікування контенту
+    PreviewConfirm = State()  # Підтвердження preview
+    Broadcasting = State()  # Активна розсилка

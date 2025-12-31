@@ -53,7 +53,6 @@ func (h *StartHandler) HandleStart(ctx *handlers.HandlerContext) error {
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("Українська", "start_lang_ua"),
 			tgbotapi.NewInlineKeyboardButtonData("English", "start_lang_en"),
-			tgbotapi.NewInlineKeyboardButtonData("Русский", "start_lang_ru"),
 		),
 	)
 
@@ -76,7 +75,6 @@ func (h *StartHandler) HandleLanguageCallback(ctx *handlers.HandlerContext) erro
 	langMap := map[string]string{
 		"ua": "ua",
 		"en": "en",
-		"ru": "ru",
 	}
 
 	langCode, ok := langMap[lang]
@@ -103,7 +101,6 @@ func (h *StartHandler) HandleLanguageCallback(ctx *handlers.HandlerContext) erro
 	langNames := map[string]string{
 		"ua": "Українську",
 		"en": "English",
-		"ru": "Русский",
 	}
 	langName := langNames[langCode]
 	if langName == "" {

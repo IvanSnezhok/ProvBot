@@ -14,17 +14,20 @@ import (
 
 type TimePayHandler struct {
 	billingService *service.BillingService
+	userService    *service.UserService
 	userRepo       *repository.UserRepository
 	config         *utils.Config
 }
 
 func NewTimePayHandler(
 	billingService *service.BillingService,
+	userService *service.UserService,
 	userRepo *repository.UserRepository,
 	config *utils.Config,
 ) *TimePayHandler {
 	return &TimePayHandler{
 		billingService: billingService,
+		userService:    userService,
 		userRepo:       userRepo,
 		config:         config,
 	}
@@ -38,7 +41,15 @@ func (h *TimePayHandler) HandleTimePay(ctx *handlers.HandlerContext) error {
 	}
 
 	// Check if user is banned
-	// ban := await db.get_ban() - need to implement ban check
+	isBanned, err := h.userService.IsBanned(context.Background(), int64(ctx.Update.Message.From.ID))
+	if err != nil {
+		// Log error but continue - don't block payment on ban check failure
+	}
+	if isBanned {
+		msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, ctx.Translator.Get("user_banned"))
+		_, _ = ctx.Bot.Send(msg)
+		return nil
+	}
 
 	// Get user contract
 	if user.Contract == nil || *user.Contract == "" {

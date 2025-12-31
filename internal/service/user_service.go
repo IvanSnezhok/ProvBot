@@ -72,7 +72,7 @@ func (s *UserService) UpdateLanguage(ctx context.Context, telegramID int64, lang
 	}
 
 	// Validate language
-	if language != i18n.LanguageUA && language != i18n.LanguageEN && language != i18n.LanguageRU {
+	if language != i18n.LanguageUA && language != i18n.LanguageEN {
 		language = i18n.DefaultLanguage
 	}
 

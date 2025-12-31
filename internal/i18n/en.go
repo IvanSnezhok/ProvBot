@@ -41,7 +41,8 @@ func GetENTranslations() map[string]string {
 		"time_pay_success":   "Internet access unblocked for 24 hours!\nAccount topped up by %.2f UAH for 24 hours! You can now return to the main menu",
 		"time_pay_failed":    "You cannot use temporary payment!\nTemporary payment can be used once per month!",
 		"time_pay_ban":       "Hello! For inquiries, please use our support email support@infoaura.com.ua",
-		
+		"user_banned":        "Your account has been blocked. Please contact support.",
+
 		// Profile
 		"profile_title":     "Your Profile",
 		"profile_id":        "ID: %d",

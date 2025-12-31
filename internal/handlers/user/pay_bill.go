@@ -19,6 +19,7 @@ import (
 
 type PayBillHandler struct {
 	billingService *service.BillingService
+	userService    *service.UserService
 	userRepo       *repository.UserRepository
 	stateManager   *state.StateManager
 	config         *utils.Config
@@ -26,12 +27,14 @@ type PayBillHandler struct {
 
 func NewPayBillHandler(
 	billingService *service.BillingService,
+	userService *service.UserService,
 	userRepo *repository.UserRepository,
 	stateManager *state.StateManager,
 	config *utils.Config,
 ) *PayBillHandler {
 	return &PayBillHandler{
 		billingService: billingService,
+		userService:    userService,
 		userRepo:       userRepo,
 		stateManager:   stateManager,
 		config:         config,
@@ -46,7 +49,15 @@ func (h *PayBillHandler) HandleTopUp(ctx *handlers.HandlerContext) error {
 	}
 
 	// Check if user is banned
-	// ban := await db.get_ban() - need to implement ban check
+	isBanned, err := h.userService.IsBanned(context.Background(), int64(ctx.Update.Message.From.ID))
+	if err != nil {
+		utils.Logger.WithError(err).Error("Failed to check ban status")
+	}
+	if isBanned {
+		msg := tgbotapi.NewMessage(ctx.Update.Message.Chat.ID, ctx.Translator.Get("user_banned"))
+		_, _ = ctx.Bot.Send(msg)
+		return nil
+	}
 
 	// Get user contract
 	if user.Contract == nil || *user.Contract == "" {

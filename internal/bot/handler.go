@@ -37,7 +37,6 @@ type BotHandler struct {
 	startHandler       *user.StartHandler
 	payBillHandler     *user.PayBillHandler
 	timePayHandler     *user.TimePayHandler
-	shopHandler        *user.ShopHandler
 	supportChatHandler *support.SupportChatHandler
 
 	// Admin handlers
@@ -81,9 +80,8 @@ func NewBotHandler(
 
 	// Initialize user handlers
 	h.startHandler = user.NewStartHandler(userService, billingService, outageService, billingRepo, userRepo, stateManager, config)
-	h.payBillHandler = user.NewPayBillHandler(billingService, userRepo, stateManager, config)
-	h.timePayHandler = user.NewTimePayHandler(billingService, userRepo, config)
-	h.shopHandler = user.NewShopHandler()
+	h.payBillHandler = user.NewPayBillHandler(billingService, userService, userRepo, stateManager, config)
+	h.timePayHandler = user.NewTimePayHandler(billingService, userService, userRepo, config)
 	h.supportChatHandler = support.NewSupportChatHandler(logRepo, stateManager, config, bot)
 
 	// Initialize admin handlers
@@ -445,9 +443,6 @@ func (h *BotHandler) handleTextMessage(ctx *BotContext) error {
 	if text == ctx.Translator.Get("connection_request") {
 		return h.startHandler.HandleConnectionRequest(handlerCtx)
 	}
-	if text == ctx.Translator.Get("menu_shop") {
-		return h.shopHandler.HandleShowCategories(handlerCtx)
-	}
 	if text == ctx.Translator.Get("support_end_chat_button") {
 		// User wants to end support chat
 		supportCtx := &support.SupportContext{
@@ -517,11 +512,6 @@ func (h *BotHandler) handleCallbackQuery(ctx *BotContext) error {
 			msg := tgbotapi.NewMessage(callback.Message.Chat.ID, ctx.Translator.Get("language_changed"))
 			_, _ = ctx.Bot.Send(msg)
 		}
-	case "lang_ru":
-		if err := h.userService.UpdateLanguage(context.Background(), int64(callback.From.ID), "ru"); err == nil {
-			msg := tgbotapi.NewMessage(callback.Message.Chat.ID, ctx.Translator.Get("language_changed"))
-			_, _ = ctx.Bot.Send(msg)
-		}
 	}
 
 	// Handle support callbacks (check before admin callbacks since support can be for admins)
@@ -565,40 +555,6 @@ func (h *BotHandler) handleCallbackQuery(ctx *BotContext) error {
 			StateManager: ctx.StateManager,
 		}
 		return h.supportChatHandler.HandleEndChat(supportCtx)
-	}
-
-	// Handle shop callbacks
-	handlerCtx := &handlers.HandlerContext{
-		Bot:          ctx.Bot,
-		Update:       ctx.Update,
-		User:         ctx.User,
-		Translator:   ctx.Translator,
-		Config:       ctx.Config,
-		StateManager: ctx.StateManager,
-	}
-
-	if strings.HasPrefix(data, "shop_cat_") {
-		categoryID := strings.TrimPrefix(data, "shop_cat_")
-		return h.shopHandler.HandleShowCategoryProducts(handlerCtx, categoryID)
-	}
-
-	if strings.HasPrefix(data, "shop_prod_") {
-		productID := strings.TrimPrefix(data, "shop_prod_")
-		return h.shopHandler.HandleShowProductDetails(handlerCtx, productID)
-	}
-
-	if strings.HasPrefix(data, "shop_order_") {
-		productID := strings.TrimPrefix(data, "shop_order_")
-		return h.shopHandler.HandleOrder(handlerCtx, productID)
-	}
-
-	if data == "shop_categories" {
-		return h.shopHandler.HandleShowCategories(handlerCtx)
-	}
-
-	if data == "shop_back" {
-		// Return to main menu
-		return h.startHandler.ShowMainMenu(handlerCtx, ctx.User != nil && ctx.User.Contract != nil)
 	}
 
 	// Handle admin callbacks

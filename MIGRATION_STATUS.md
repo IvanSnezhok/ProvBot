@@ -25,9 +25,9 @@ This document tracks the migration progress from the Python Telegram bot (branch
 | `help_message()` | handlers/users/start.py | (in handler.go) | internal/bot/handler.go | ✅ Done |
 | `request_for_ts()` | handlers/users/start.py | `HandleStartSupport()` | internal/handlers/support/chat.go | ✅ Done |
 | `tech_support_message()` | handlers/users/start.py | `HandleSupportMessage()` | internal/handlers/support/chat.go | ✅ Done |
-| `connect_friend()` | handlers/users/start.py | - | - | ❌ Missing |
+| `connect_friend()` | handlers/users/start.py | `HandleConnectFriend()` | internal/handlers/user/start.go | ✅ Done |
 | `get_client()` | handlers/users/start.py | - | - | ❌ Missing |
-| `request_client()` | handlers/users/start.py | - | - | ❌ Missing |
+| `request_client()` | handlers/users/start.py | `HandleConnectionRequest()` | internal/handlers/user/start.go | ✅ Done |
 
 ### Payment Handlers
 
@@ -68,9 +68,11 @@ This document tracks the migration progress from the Python Telegram bot (branch
 
 | Python Function | Python File | Go Function | Go File | Status |
 |----------------|-------------|------------|---------|--------|
-| `show_categories()` | handlers/users/shop.py | - | - | ❌ Missing |
-| `show_category_products()` | handlers/users/shop.py | - | - | ❌ Missing |
-| `show_product_page()` | handlers/users/shop.py | - | - | ❌ Missing |
+| `show_categories()` | handlers/users/shop.py | - | - | 🚫 Removed |
+| `show_category_products()` | handlers/users/shop.py | - | - | 🚫 Removed |
+| `show_product_page()` | handlers/users/shop.py | - | - | 🚫 Removed |
+
+> **Note:** Shop functionality was removed as not needed for this project.
 
 ### Support Handlers
 
@@ -100,15 +102,15 @@ This document tracks the migration progress from the Python Telegram bot (branch
 | `t_pay()` | utils/db_api/database.py | `TemporaryPay()` | internal/service/billing_service.go | ✅ Done |
 | `balance_change()` | utils/db_api/database.py | `UpdateBalance()` | internal/service/billing_service.go | ✅ Done |
 | `check_net_pause()` | utils/db_api/database.py | - | - | ❌ Missing |
-| `get_ban()` | utils/db_api/postgresql.py | - | - | ❌ Missing |
-| `is_alarm()` | utils/db_api/postgresql.py | - | - | ❌ Missing |
-| `get_alarm_message()` | utils/db_api/postgresql.py | - | - | ❌ Missing |
+| `get_ban()` | utils/db_api/postgresql.py | `IsBanned()` | internal/repository/user_repo.go | ✅ Done |
+| `is_alarm()` | utils/db_api/postgresql.py | `HasActiveOutageForUser()` | internal/service/outage_service.go | ✅ Done |
+| `get_alarm_message()` | utils/db_api/postgresql.py | `GetOutageMessageForUser()` | internal/service/outage_service.go | ✅ Done |
 
 ### SMS Integration
 
 | Python Function | Python File | Go Function | Go File | Status |
 |----------------|-------------|------------|---------|--------|
-| `send_message_sms()` | utils/misc/sms_message.py | - | - | ❌ Missing |
+| `send_message_sms()` | utils/misc/sms_message.py | `SendSMS()` | internal/service/sms_service.go | ✅ Done |
 
 ---
 
@@ -118,25 +120,30 @@ This document tracks the migration progress from the Python Telegram bot (branch
 |----------|-------------|---------|--------|
 | Ukrainian (UA) | data/locales/- | internal/i18n/ua.go | ✅ Done |
 | English (EN) | data/locales/en/ | internal/i18n/en.go | ✅ Done |
-| Russian (RU) | data/locales/ru/ | internal/i18n/ru.go | ❌ Missing |
+| Russian (RU) | data/locales/ru/ | - | 🚫 Removed |
+
+> **Note:** Russian language support was removed.
 
 ---
 
 ## Missing Features Summary
 
 ### High Priority
-1. **Russian translations** (`internal/i18n/ru.go`) - Required for RU-speaking users
-2. **Ban system** (`get_ban()`) - Security feature
-3. **Alarm/outage notifications** (`is_alarm()`, `get_alarm_message()`) - Critical for service status
+1. **Network status check** (`check_net_pause()`) - Shows "On/Off" status in menu
 
 ### Medium Priority
-4. **Network status check** (`check_net_pause()`) - Shows "On/Off" status in menu
-5. **"Connect friend" feature** - Referral program
-6. **"Connection request"** - New customer signup
+2. **Get client feature** (`get_client()`) - Show client info
 
-### Low Priority
-7. **Shop functionality** - Product catalog (if needed)
-8. **SMS integration** - Alternative notification channel
+### Completed
+- ✅ Ban system integration - IsBanned() integrated into pay_bill.go and time_pay.go
+
+### Completed/Removed
+- ~~Russian translations~~ - Removed (not needed)
+- ~~Shop functionality~~ - Removed (not needed)
+- ✅ Alarm/outage notifications - Replaced by OutageService
+- ✅ SMS integration - Implemented in sms_service.go
+- ✅ "Connect friend" feature - Implemented
+- ✅ "Connection request" - Implemented
 
 ---
 
@@ -155,14 +162,13 @@ This document tracks the migration progress from the Python Telegram bot (branch
 - [x] Message history
 - [x] Scheduled balance notifications
 - [x] Logging middleware
-- [ ] Russian translations
-- [ ] Ban system
-- [ ] Alarm notifications
-- [ ] Network status display
-- [ ] "Connect friend" feature
-- [ ] Connection request form
-- [ ] Shop module
-- [ ] SMS integration
+- [x] Outage/Alarm notifications (OutageService)
+- [x] "Connect friend" feature
+- [x] Connection request form
+- [x] SMS service
+- [x] Ban system integration in payment handlers
+- [ ] Network status display (`check_net_pause`)
+- [ ] Get client feature
 
 ---
 
@@ -241,5 +247,6 @@ ProvBot/
 ## Notes
 
 - Migration started: October 31, 2025
-- Last updated: December 15, 2025
+- Last updated: December 28, 2025
 - Current branch: `dev2.0`
+- Shop and Russian language support removed as not needed

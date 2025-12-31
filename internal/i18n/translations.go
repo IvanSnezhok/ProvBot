@@ -89,13 +89,11 @@ const DefaultLanguage = "ua"
 const (
 	LanguageUA = "ua"
 	LanguageEN = "en"
-	LanguageRU = "ru"
 )
 
 // LoadTranslations loads all translations
 func LoadTranslations() {
 	globalStore.RegisterLanguage(LanguageUA, GetUATranslations())
 	globalStore.RegisterLanguage(LanguageEN, GetENTranslations())
-	globalStore.RegisterLanguage(LanguageRU, GetRUTranslations())
 }
 

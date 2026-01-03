@@ -27,6 +27,8 @@ async def on_startup(dispatcher):
     await db.create_table_chats()
     logging.info("Создаем таблицу кликов")
     await db.create_table_user_clicks()
+    logging.info("Створюємо таблицю налаштувань")
+    await db.create_table_settings()
     logging.info("Включаем уведомления по таймеру")
     logging.info("Готово.")
     await on_startup_notify(dispatcher)

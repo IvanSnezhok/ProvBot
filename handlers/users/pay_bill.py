@@ -22,6 +22,15 @@ from utils.misc.pay_load import Pay
 @dp.message_handler(Text(__("Поповнити рахунок")), state="*")
 async def contract_pay(message: types.Message, state: FSMContext):
     await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
+
+    # Перевірка заглушки платежів
+    if await db.is_payment_disabled():
+        await message.answer(
+            _("Наразі проводяться технічні роботи з платіжною системою. "
+              "Будь ласка, спробуйте пізніше.")
+        )
+        return
+
     await database.search_query(tel=await db.select_tel(user_id=message.from_user.id))
     ban = await db.get_ban()
     print(ban)

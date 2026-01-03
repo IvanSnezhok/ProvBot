@@ -101,6 +101,14 @@ async def admin_panel(call: types.CallbackQuery, state: FSMContext):
     )
 
 
+@dp.callback_query_handler(IDFilter(ADMINS), text="toggle_payment_stub", state="*")
+async def toggle_payment_stub(call: types.CallbackQuery):
+    new_state = await db.toggle_payment_disabled()
+    status = "УВІМКНЕНО" if new_state else "ВИМКНЕНО"
+    await call.message.answer(f"Заглушку платежів {status}")
+    await call.answer()
+
+
 @dp.callback_query_handler(IDFilter(ADMINS), Text(startswith="answer"), state="*")
 async def admin_answer(call: types.CallbackQuery, state: FSMContext):
     await state.finish()

@@ -16,6 +16,7 @@ admin_keyboard.add(
     InlineKeyboardButton(text="Зареэструвати аварію", callback_data="register_alarm"),
     InlineKeyboardButton(text="Редактор аварій", callback_data="redactor_alarm"),
     InlineKeyboardButton(text="Розсилка всім", callback_data="broadcast_start"),
+    InlineKeyboardButton(text="Заглушка платежів", callback_data="toggle_payment_stub"),
 )
 
 accept_message = InlineKeyboardMarkup()

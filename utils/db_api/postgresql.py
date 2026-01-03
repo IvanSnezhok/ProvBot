@@ -115,6 +115,37 @@ class Database:
         """
         await self.execute(sql, execute=True)
 
+    async def create_table_settings(self):
+        sql = """
+        CREATE TABLE IF NOT EXISTS settings (
+            key VARCHAR(255) PRIMARY KEY,
+            value VARCHAR(255) NOT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """
+        await self.execute(sql, execute=True)
+
+    async def get_setting(self, key: str) -> str:
+        sql = "SELECT value FROM settings WHERE key=$1"
+        return await self.execute(sql, key, fetchval=True)
+
+    async def set_setting(self, key: str, value: str):
+        sql = """
+        INSERT INTO settings (key, value, updated_at) VALUES ($1, $2, NOW())
+        ON CONFLICT (key) DO UPDATE SET value=$2, updated_at=NOW()
+        """
+        return await self.execute(sql, key, value, execute=True)
+
+    async def is_payment_disabled(self) -> bool:
+        result = await self.get_setting('payment_disabled')
+        return result == 'true'
+
+    async def toggle_payment_disabled(self) -> bool:
+        current = await self.is_payment_disabled()
+        new_value = 'false' if current else 'true'
+        await self.set_setting('payment_disabled', new_value)
+        return not current
+
     async def add_chat(self, user_id: int, admin_id: int = None, status: str = 'waiting'):
         sql = "INSERT INTO chats (user_id, admin_id, start_time, status) VALUES($1, $2, NOW(), $3) RETURNING id"
         return await self.execute(sql, user_id, admin_id, status, fetchval=True)
@@ -261,7 +292,7 @@ class Database:
             return False
 
     async def get_alarm_message(self, grp_alarm):
-        sql = "SELECT message FROM alarm WHERE grp_alarm LIKE '%$1%'"
+        sql = "SELECT message FROM alarm WHERE grp_alarm LIKE '%' || $1 || '%'"
         return await self.execute(sql, str(grp_alarm), fetchval=True)
 
     async def add_bill(self, bill_id, telegram_id, date, username, contract, pay_amount):

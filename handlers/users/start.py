@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 import asyncpg
@@ -82,14 +83,21 @@ async def ua_tel_get(message: types.Message, state: FSMContext):
     tel = format_number(tel)
     await db.update_phone_number(tel, message.from_user.id)
     await database.search_query(tel)
-    for admin in ADMINS:
-        await dp.bot.send_message(admin, text=f"Новий клієнт: {message.from_user.full_name}, {message.from_user.id}\n"
-                                              f"З номером телефону: {tel}\n")
-        if len(database.data) > 0:
-            await dp.bot.send_message(admin, text=f"Клієнт знайдений в білінгу, його номер договору "
-                                                  f"{database.data[2]}\n")
-        else:
-            await dp.bot.send_message(admin, text=f"Клієнт не знайдений в білінгу\n")
+    new_client_text = (f"Новий клієнт: {message.from_user.full_name}, {message.from_user.id}\n"
+                       f"З номером телефону: {tel}\n")
+    await asyncio.gather(
+        *[dp.bot.send_message(admin, text=new_client_text) for admin in ADMINS],
+        return_exceptions=True
+    )
+    if len(database.data) > 0:
+        billing_text = (f"Клієнт знайдений в білінгу, його номер договору "
+                        f"{database.data[2]}\n")
+    else:
+        billing_text = f"Клієнт не знайдений в білінгу\n"
+    await asyncio.gather(
+        *[dp.bot.send_message(admin, text=billing_text) for admin in ADMINS],
+        return_exceptions=True
+    )
     try:
         await db.set_contract(database.data[2], message.from_user.id)
     except IndexError:
@@ -310,22 +318,23 @@ async def tech_support_message(message: types.Message, state: FSMContext):
     user = await db.select_user_by_id(message.from_user.id)
     async with state.proxy() as data:
         data["Заявка"] = answer
-        for admin in ADMINS:
-            try:
-                answer_reply = InlineKeyboardMarkup()
-                answer_reply.add(InlineKeyboardButton(text="Відповісти",
-                                                      callback_data=f"answer {message.from_user.id}"))
-                msg = await dp.bot.send_message(admin, f"Завка на виклик майстра: {data['Заявка']}")
-                msg1 = await dp.bot.send_message(admin, f"Користувач: {user[1]}"
-                                                        f"\nНомер телефону: {user[5]}"
-                                                        f"\nНомер договору: {user[6]}"
-                                                        f"\nТелеграм ІД: {user[3]}",
-                                                 reply_markup=answer_reply)
-                await db.message("BOT", 10001, msg1.html_text, msg1.date)
-                await db.message("BOT", 10001, msg.html_text, msg.date)
+        answer_reply = InlineKeyboardMarkup()
+        answer_reply.add(InlineKeyboardButton(text="Відповісти",
+                                              callback_data=f"answer {message.from_user.id}"))
+        request_text = f"Завка на виклик майстра: {data['Заявка']}"
+        user_info_text = (f"Користувач: {user[1]}"
+                          f"\nНомер телефону: {user[5]}"
+                          f"\nНомер договору: {user[6]}"
+                          f"\nТелеграм ІД: {user[3]}")
 
-            except Exception as err:
-                logging.exception(err)
+        async def _notify_admin_tech(admin_id):
+            await dp.bot.send_message(admin_id, request_text)
+            await dp.bot.send_message(admin_id, user_info_text, reply_markup=answer_reply)
+
+        await asyncio.gather(
+            *[_notify_admin_tech(admin) for admin in ADMINS],
+            return_exceptions=True
+        )
     await state.reset_state()
     msg = await message.answer(text=_("Заявка в опрацюванні, чекайте зв'язку\n"
                                       "Можете повернутись у головне меню скориставшись кнопкою знизу"),
@@ -371,22 +380,23 @@ async def request_client(message: types.Message, state: FSMContext):
     user = await db.select_user_by_id(message.from_user.id)
     async with state.proxy() as data:
         data["Заявка"] = answer
-        for admin in ADMINS:
-            try:
-                answer_reply = InlineKeyboardMarkup()
-                answer_reply.add(InlineKeyboardButton(text="Відповісти",
-                                                      callback_data=f"answer {message.from_user.id}"))
-                msg = await dp.bot.send_message(admin, f"Заявка на подключение: {data['Заявка']}")
-                msg1 = await dp.bot.send_message(admin, f"Користувач: {user[1]}"
-                                                        f"\nНомер телефону: {user[5]}"
-                                                        f"\nНомер договору: {user[6]}"
-                                                        f"\nТелеграм ІД: {user[3]}",
-                                                 reply_markup=answer_reply)
-                await db.message("BOT", 10001, msg1.html_text, msg1.date)
-                await db.message("BOT", 10001, msg.html_text, msg.date)
+        answer_reply = InlineKeyboardMarkup()
+        answer_reply.add(InlineKeyboardButton(text="Відповісти",
+                                              callback_data=f"answer {message.from_user.id}"))
+        connect_text = f"Заявка на подключение: {data['Заявка']}"
+        user_info_text = (f"Користувач: {user[1]}"
+                          f"\nНомер телефону: {user[5]}"
+                          f"\nНомер договору: {user[6]}"
+                          f"\nТелеграм ІД: {user[3]}")
 
-            except Exception as err:
-                logging.exception(err)
+        async def _notify_admin_connect(admin_id):
+            await dp.bot.send_message(admin_id, connect_text)
+            await dp.bot.send_message(admin_id, user_info_text, reply_markup=answer_reply)
+
+        await asyncio.gather(
+            *[_notify_admin_connect(admin) for admin in ADMINS],
+            return_exceptions=True
+        )
     await state.reset_state()
     msg = await message.answer(text=_("Заявка в опрацюванні, чекайте зв'язку\n"
                                       "Можете повернутись у головне меню скориставшись кнопкою знизу"),

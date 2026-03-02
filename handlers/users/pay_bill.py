@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import random
 import re
@@ -140,12 +141,14 @@ async def get_invoice_contract(message: types.Message, state: FSMContext):
                 ],
                 start_parameter=random_id
             )
-            for admin in ADMINS:
-                await dp.bot.send_message(admin,
-                                          f"Створено інвойс для користувача {message.from_user.id}:\n"
-                                          f"Договір: {contract}\n"
-                                          f"Сума: {payload} грн\n"
-                                          f"ID інвойсу: {random_id}")
+            invoice_notify_text = (f"Створено інвойс для користувача {message.from_user.id}:\n"
+                                   f"Договір: {contract}\n"
+                                   f"Сума: {payload} грн\n"
+                                   f"ID інвойсу: {random_id}")
+            await asyncio.gather(
+                *[dp.bot.send_message(admin, invoice_notify_text) for admin in ADMINS],
+                return_exceptions=True
+            )
             try:
                 await bot.send_invoice(message.from_user.id, **invoice.generate_invoice(), payload=str(amount_pay))
                 await state.reset_state(with_data=False)
@@ -218,13 +221,11 @@ async def process_successful_pay(message: types.Message, state: FSMContext):
                               message.from_user.username, contract, payload)
             await database.pay_balance(contract=contract, payload=payload)
             logging.info(f"Manual payment OK: contract={contract}, payload={payload}, user={message.from_user.id}")
-            for admin in ADMINS:
-                try:
-                    await dp.bot.send_message(
-                        chat_id=admin,
-                        text=f"Користувач {contract} успішно поповнив рахунок на {payload} {message.successful_payment.currency}")
-                except Exception as err:
-                    logging.exception(err)
+            notify_text = f"Користувач {contract} успішно поповнив рахунок на {payload} {message.successful_payment.currency}"
+            await asyncio.gather(
+                *[dp.bot.send_message(chat_id=admin, text=notify_text) for admin in ADMINS],
+                return_exceptions=True
+            )
             msg = await dp.bot.send_message(
                 chat_id=message.from_user.id,
                 text=__("Ваш рахунок поповнено на {} {}!").format(payload, message.successful_payment.currency),
@@ -255,13 +256,11 @@ async def process_successful_pay(message: types.Message, state: FSMContext):
                                   message.from_user.username, contract_str, str(payload))
             await database.pay_balance(contract=contract_str, payload=payload)
             logging.info(f"Auto-tariff payment OK: contract={contract_str}, payload={payload}, user={message.from_user.id}")
-            for admin in ADMINS:
-                try:
-                    await dp.bot.send_message(
-                        chat_id=admin,
-                        text=f"Користувач {contract_str} успішно поповнив рахунок на {payload} {message.successful_payment.currency}")
-                except Exception as err:
-                    logging.exception(err)
+            notify_text = f"Користувач {contract_str} успішно поповнив рахунок на {payload} {message.successful_payment.currency}"
+            await asyncio.gather(
+                *[dp.bot.send_message(chat_id=admin, text=notify_text) for admin in ADMINS],
+                return_exceptions=True
+            )
             msg = await dp.bot.send_message(
                 chat_id=message.from_user.id,
                 text=__("Ваш рахунок поповнено на {} {}!").format(payload, message.successful_payment.currency),
@@ -275,11 +274,9 @@ async def process_successful_pay(message: types.Message, state: FSMContext):
             text=__("На жаль, виникла помилка при обробці платежу. Будь ласка, зверніться до служби підтримки."),
             reply_markup=return_button)
         await db.message("BOT", 10001, error_msg.html_text, error_msg.date)
-        for admin in ADMINS:
-            try:
-                await dp.bot.send_message(
-                    chat_id=admin,
-                    text=f"Помилка платежу user={message.from_user.id}: {e}")
-            except Exception:
-                pass
+        error_notify_text = f"Помилка платежу user={message.from_user.id}: {e}"
+        await asyncio.gather(
+            *[dp.bot.send_message(chat_id=admin, text=error_notify_text) for admin in ADMINS],
+            return_exceptions=True
+        )
         await state.finish()

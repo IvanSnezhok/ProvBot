@@ -1,3 +1,5 @@
+import asyncio
+
 from aiogram import types
 from aiogram.dispatcher.filters import Text
 
@@ -22,8 +24,11 @@ async def time_pay(message: types.Message):
     "Рахунок поповнено на {} грн на 24 години! Тепер можете повернутись у головне меню").format(database.time_pay_b[0]),
                                    reply_markup=return_button)
         await db.message("BOT", 10001, msg.html_text, msg.date)
-        for admin in ADMINS:
-            await dp.bot.send_message(admin, _("Користувач {} використав тимчасовий платіж!").format(user))
+        notify_text = _("Користувач {} використав тимчасовий платіж!").format(user)
+        await asyncio.gather(
+            *[dp.bot.send_message(admin, notify_text) for admin in ADMINS],
+            return_exceptions=True
+        )
     else:
         msg = await message.answer(text=_("Ви не можете використати тимчасовий платіж!\n"
                                           "Користуватись тимчасовим платежем можна раз на місяць!"),

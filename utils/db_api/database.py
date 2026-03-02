@@ -151,6 +151,7 @@ async def pay_balance(contract, payload):
     balance_n = balance_n[0][0]
     if balance_n >= price[0]:
         await cur.execute(f'UPDATE users set state="on" WHERE contract={contract}')
+    await conn.commit()
     await cur.close()
     conn.close()
 
@@ -204,7 +205,7 @@ async def t_pay(contract):  # Временный плтажеж
         await cur.execute(f"UPDATE users SET balance={balance} WHERE contract={contract}")
         await cur.execute(f"UPDATE users SET state='on' WHERE contract={contract}")
         await cur.execute(f"UPDATE users SET t_pay=1 WHERE contract={contract}")
-        await cur.commit()
+        await conn.commit()
         time_pay_b.clear()
         time_pay_b.append(balance)
         return True

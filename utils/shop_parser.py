@@ -1,11 +1,24 @@
 import xml.etree.ElementTree as ET
-import requests
+import time
+
+import aiohttp
+
+_cache = None
+_cache_time = 0
+_CACHE_TTL = 600  # 10 minutes
 
 
-def get_products():
+async def get_products():
+    global _cache, _cache_time
+    now = time.time()
+    if _cache is not None and (now - _cache_time) < _CACHE_TTL:
+        return _cache
+
     url = "https://sunrise.co.ua/marketplace-integration/google-feed/27bd50b19dc9c0d7d1ed3c5a7278cc49?langId=3"
-    response = requests.get(url)
-    root = ET.fromstring(response.content)
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            content = await response.read()
+    root = ET.fromstring(content)
 
     products = []
     for item in root.findall('.//item'):
@@ -30,4 +43,6 @@ def get_products():
             print(f"Помилка при парсингу товару: {e}")
             continue
 
+    _cache = products
+    _cache_time = now
     return products

@@ -1,5 +1,6 @@
 import asyncio
 import aiomysql
+import logging
 from datetime import datetime
 from pytz import timezone
 from loader import db, dp
@@ -7,9 +8,11 @@ from data import config
 from utils.misc.sms_message import send_message_sms
 from utils.format_number import number
 
+logger = logging.getLogger(__name__)
+
 async def notify_debtors():
     kyiv_time = datetime.now(timezone('Europe/Kiev'))
-    print(f"Starting debt notification at {kyiv_time.strftime('%Y-%m-%d %H:%M:%S')} Kyiv time")
+    logger.info("Starting debt notification at %s Kyiv time", kyiv_time.strftime('%Y-%m-%d %H:%M:%S'))
 
     conn = await aiomysql.connect(host=config.BILL_HOST, port=int(config.BILL_PORT),
                                   user=config.BILL_USER, password=config.BILL_PASS,
@@ -22,7 +25,7 @@ async def notify_debtors():
 
     for tariff in tariffs:
         tariff_id, tariff_name, tariff_price = tariff
-        print(f"\nDOLZHNIKI TARIFA {tariff_name}; Price: {tariff_price} GRN")
+        logger.info("Processing tariff %s; Price: %s GRN", tariff_name, tariff_price)
 
         query = f"""
         SELECT ip, telefon, fio, balance, contract 
@@ -43,7 +46,7 @@ async def notify_debtors():
             debt = round(tariff_price - balance, 2)
 
             if debt > 0:
-                print(f"{contract}:{ip}; tel:{phone} Price:{tariff_price}-({balance})(balance)={debt} grn.")
+                logger.debug("Debtor %s:%s; tel:%s debt=%s grn", contract, ip, phone, debt)
                 await send_notification(phone, contract, debt)
 
     await cursor.close()
@@ -55,9 +58,9 @@ async def send_notification(phone, contract, debt):
     try:
         # Використовуємо існуючу функцію send_message_sms
         result = await send_message_sms(number(phone), message)
-        print(f"Notification result for {phone}: {result}")
+        logger.info("Notification result for %s: %s", phone, result)
     except Exception as e:
-        print(f"Error sending notification to {phone}: {e}")
+        logger.error("Error sending notification to %s: %s", phone, e)
 
 # Функція для запуску скрипта
 async def run_debt_notification():

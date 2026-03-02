@@ -1,5 +1,7 @@
 import asyncio
 import logging
+
+logger = logging.getLogger(__name__)
 import time
 from datetime import datetime
 from typing import Dict
@@ -190,7 +192,7 @@ async def t_pay(contract):  # Временный плтажеж
         price = await cur.fetchall()
         try:
             price = int(price[0][0])
-            print(price)
+            logger.debug("Tariff price: %s", price)
         except IndexError:
             price = None
             logging.info("Price not find")
@@ -249,8 +251,7 @@ async def tel_by_group(group: int = 8):
             phone_array.append(i[0])
         return phone_array
     except Exception as e:
-        print(e)
-        pass
+        logger.error("Error in tel_by_group: %s", e)
 
 async def users_with_alarm(grp, street=None, street_number=None):
     conn = await aiomysql.connect(host=config.BILL_HOST, port=int(config.BILL_PORT),

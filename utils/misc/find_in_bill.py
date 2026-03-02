@@ -1,6 +1,9 @@
 import aiomysql
 import asyncio
+import logging
 import time
+
+logger = logging.getLogger(__name__)
 
 from data import config
 
@@ -15,7 +18,7 @@ async def find(contract=None, phone=None, name=None, address: list = None):
     await cur.execute("SELECT name_street FROM `p_street`")
     streets = await cur.fetchall()
     streets = [street[0] for street in streets]
-    print(streets)
+    logger.debug("Streets loaded: %d entries", len(streets))
     try:
         if address:
             if address[0] in streets:
@@ -46,7 +49,7 @@ async def find(contract=None, phone=None, name=None, address: list = None):
                     raise ValueError("Too many arguments")
 
     except TypeError as e:
-        print(e)
+        logger.error("TypeError in find: %s", e)
     if contract:
         await cur.execute("SELECT name, balance, contract, fio, state, paket, telefon, street, house, room, ip, id "
                           "FROM `users` "
@@ -59,10 +62,10 @@ async def find(contract=None, phone=None, name=None, address: list = None):
         sql = "SELECT name, balance, contract, fio, state, paket, telefon, street, house, room, ip, id " \
               "FROM `users` " \
               f"WHERE fio LIKE '%{name}%' "
-        print(sql)
+        logger.debug("SQL query: %s", sql)
         await cur.execute(sql.encode('cp1251'))
     result = await cur.fetchall()
-    print(result)
+    logger.debug("Query result count: %d", len(result))
 
     if len(result) == 1:
         result = result[0]

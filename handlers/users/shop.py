@@ -15,8 +15,8 @@ class ShopStates:
 
 @dp.message_handler(text=__("🛒 Магазин"))
 async def show_categories(message: types.Message):
-    products = get_products()
-    
+    products = await get_products()
+
     # Отримуємо унікальні категорії
     categories = set(product['category'] for product in products)
     
@@ -46,8 +46,8 @@ async def show_category_products(callback: types.CallbackQuery):
         await callback.answer(__("Категорія не знайдена"))
         return
     
-    products = [p for p in get_products() if p['category'] == category]
-    
+    products = [p for p in await get_products() if p['category'] == category]
+
     if not products:
         await callback.answer(__("В цій категорії зараз немає товарів"))
         return
@@ -139,8 +139,8 @@ async def navigate_products(callback: types.CallbackQuery):
         await callback.answer(__("Категорія не знайдена"))
         return
         
-    products = [p for p in get_products() if p['category'] == category]
-    
+    products = [p for p in await get_products() if p['category'] == category]
+
     if action == 'next':
         ShopStates.current_page[callback.from_user.id] += 1
     else:

@@ -1,5 +1,7 @@
 import logging
 
+logger = logging.getLogger(__name__)
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command
@@ -67,7 +69,7 @@ async def bot_echo(message: types.Message):
                     msg = await dp.bot.send_message(chat_id=admin,
                                                     text=f"Сообщения от пользователя: {message.from_user.full_name}\n"
                                                          f"Текст сообщения: {message.text}\n"
-                                                         f"Телефон: {await db.select_tel(message.from_user.id)}\n"
+                                                         f"Телефон: {tel}\n"
                                                          f"Номер договору: {database.data[2]}\n",
                                                     parse_mode='HTML',
                                                     reply_markup=answer_reply)
@@ -77,7 +79,7 @@ async def bot_echo(message: types.Message):
                                                   photo=message.photo[-1].file_id,
                                                   caption=f"Сообщения от пользователя: {message.from_user.full_name}\n"
                                                           f"Текст сообщения: {message.caption}\n"
-                                                          f"Телефон: {await db.select_tel(message.from_user.id)}\n"
+                                                          f"Телефон: {tel}\n"
                                                           f"Номер договору: {database.data[2]}\n",
                                                   parse_mode='HTML',
                                                   reply_markup=answer_reply)
@@ -87,7 +89,7 @@ async def bot_echo(message: types.Message):
                                                      document=message.document.file_id,
                                                      caption=f"Сообщения от пользователя:"
                                                              f" {message.from_user.full_name}\n"
-                                                             f"Телефон: {await db.select_tel(message.from_user.id)}\n"
+                                                             f"Телефон: {tel}\n"
                                                              f"Номер договору: {database.data[2]}\n",
                                                      parse_mode='HTML',
                                                      reply_markup=answer_reply)
@@ -97,7 +99,7 @@ async def bot_echo(message: types.Message):
                                                   video=message.video.file_id,
                                                   caption=f"Сообщения от пользователя:"
                                                           f" {message.from_user.full_name}\n"
-                                                          f"Телефон: {await db.select_tel(message.from_user.id)}\n"
+                                                          f"Телефон: {tel}\n"
                                                           f"Номер договору: {database.data[2]}\n",
                                                   parse_mode='HTML',
                                                   reply_markup=answer_reply)

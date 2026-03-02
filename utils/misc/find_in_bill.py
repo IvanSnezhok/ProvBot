@@ -1,21 +1,29 @@
 import aiomysql
 import asyncio
+import logging
 import time
 
 from data import config
 
 loop = asyncio.get_event_loop()
 
+_streets_cache = None
+
 
 async def find(contract=None, phone=None, name=None, address: list = None):
+    global _streets_cache
     conn = await aiomysql.connect(host=config.BILL_HOST, port=int(config.BILL_PORT),
                                   user=config.BILL_USER, password=config.BILL_PASS,
                                   db=config.BILL_NAME, loop=loop, charset="cp1251")
     cur = await conn.cursor()
-    await cur.execute("SELECT name_street FROM `p_street`")
-    streets = await cur.fetchall()
-    streets = [street[0] for street in streets]
-    print(streets)
+    if _streets_cache is None:
+        await cur.execute("SELECT name_street FROM `p_street`")
+        streets = await cur.fetchall()
+        streets = [street[0] for street in streets]
+        _streets_cache = streets
+    else:
+        streets = _streets_cache
+    logging.debug("Streets: %s", streets)
     try:
         if address:
             if address[0] in streets:
@@ -46,7 +54,7 @@ async def find(contract=None, phone=None, name=None, address: list = None):
                     raise ValueError("Too many arguments")
 
     except TypeError as e:
-        print(e)
+        logging.debug("TypeError in find(): %s", e)
     if contract:
         await cur.execute("SELECT name, balance, contract, fio, state, paket, telefon, street, house, room, ip, id "
                           "FROM `users` "
@@ -59,10 +67,10 @@ async def find(contract=None, phone=None, name=None, address: list = None):
         sql = "SELECT name, balance, contract, fio, state, paket, telefon, street, house, room, ip, id " \
               "FROM `users` " \
               f"WHERE fio LIKE '%{name}%' "
-        print(sql)
+        logging.debug("SQL query: %s", sql)
         await cur.execute(sql.encode('cp1251'))
     result = await cur.fetchall()
-    print(result)
+    logging.debug("Query result: %s", result)
 
     if len(result) == 1:
         result = result[0]

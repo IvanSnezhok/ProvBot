@@ -1,5 +1,7 @@
 import logging
 
+logger = logging.getLogger(__name__)
+
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command
@@ -28,7 +30,7 @@ async def bot_echo(message: types.Message):
     tel = await db.select_tel(message.from_user.id)
     ban = await db.get_ban()
 
-    print(ban)
+    logger.debug("Ban list: %s", ban)
     if await db.is_alarm(message.from_user.id):
         await database.search_query(tel)
         if len(database.data) > 0:

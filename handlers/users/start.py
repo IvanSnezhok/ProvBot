@@ -1,5 +1,7 @@
 import logging
 
+logger = logging.getLogger(__name__)
+
 import asyncpg
 from aiogram import types
 from aiogram.dispatcher import FSMContext
@@ -98,7 +100,7 @@ async def ua_tel_get(message: types.Message, state: FSMContext):
         pass
     net_on = _("Увімкнено")
     net_off = _("Вимкнено")
-    print(database.data)
+    logger.debug("Billing data for user: %s", database.data)
     if len(database.data) > 0:
 
         net_pause = await database.check_net_pause(database.data[2])

@@ -1,5 +1,6 @@
 import asyncio
 import re
+import logging
 
 import aiohttp
 import transliterate
@@ -34,6 +35,8 @@ from utils.format_number import unformat_number, number, format_text_account_adm
 from utils.misc.find_in_bill import find
 from utils.misc.sms_message import send_message_sms
 
+
+logger = logging.getLogger(__name__)
 
 @dp.message_handler(IDFilter(ADMINS), commands=["stats"], state="*")
 async def stats(message: types.Message):
@@ -113,7 +116,7 @@ async def toggle_payment_stub(call: types.CallbackQuery):
 async def admin_answer(call: types.CallbackQuery, state: FSMContext):
     await state.finish()
     user_id = call.data.split(" ")[1]
-    print(user_id)
+    logger.debug("user_id: %s", user_id)
     await state.set_state("answer")
     await state.set_data({"user_id": user_id})
     await db.message(
@@ -153,7 +156,7 @@ async def message_history_start(call: types.CallbackQuery, state: FSMContext):
 )
 async def admin_answer_text(message: types.Message, state: FSMContext):
     user_id = await state.get_data()
-    print(user_id)
+    logger.debug("user_id: %s", user_id)
     await state.finish()
     if message.content_type == "text":
         await dp.bot.send_message(user_id["user_id"], message.text)
@@ -344,7 +347,7 @@ async def account_menu_handler(message: types.Message, state: FSMContext):
                 text=f"Не вдалося знайти користувача", reply_markup=back
             )
     except Exception as e:
-        print(e)
+        logger.error("Error: %s", e)
         await message.answer(
             text=f"Не вдалося знайти користувача з номером договору {message.text}",
             reply_markup=back,
@@ -383,7 +386,7 @@ async def message_history_get(message: types.Message, state: FSMContext):
     msg = await message.answer(
         f"Останні {message.text} повідомлень від {contract['account']}"
     )
-    print(messages)
+    logger.debug("Message history count: %d", len(messages))
     for i in messages:
         if i[0] is not None:
             msg1 = await message.answer(i[0])
@@ -447,7 +450,7 @@ async def admin_change_balance_handler(message: types.Message, state: FSMContext
     )
     account = await state.get_data()
     account = account["account"]
-    print(account)
+    logger.debug("Account: %s", account)
     try:
         await pay_balance(account, message.text)
         msg = await message.answer(
@@ -459,8 +462,8 @@ async def admin_change_balance_handler(message: types.Message, state: FSMContext
         phone = result["telefon"]
         if len(phone) > 13:
             phone = phone[:13]
-            print(phone)
-        print(phone)
+            logger.debug("Phone: %s", phone)
+        logger.debug("Phone: %s", phone)
         try:
             text = (
                 "Рахунок "
@@ -472,10 +475,10 @@ async def admin_change_balance_handler(message: types.Message, state: FSMContext
             )
             await send_message_sms(unformat_number(phone), text)
         except Exception as e:
-            print(e)
+            logger.error("Error: %s", e)
         await state.finish()
     except Exception as e:
-        print(e)
+        logger.error("Error: %s", e)
         msg = await message.answer(
             text=f"Не вдалося поповнити баланс користувача {account} на {message.text}",
             reply_markup=back,
@@ -542,7 +545,7 @@ async def message_get_phone(message: types.Message, state: FSMContext):
                 msg.date,
             )
     except Exception as e:
-        print(e)
+        logger.error("Error: %s", e)
         msg = await message.answer(
             f"Телефон або ІД не знайдений у боті\nВиникла помилка при пошуку {e}"
         )
@@ -581,7 +584,7 @@ async def message_get_text(message: types.Message, state: FSMContext):
         await state.update_data(type="video")
         await state.update_data(video=message.video.file_id)
     data = await state.get_data()
-    print(data["phone"])
+    logger.debug("Phone data: %s", data["phone"])
     users = await db.select_all_users()
     users_phones = []
     users_id = []
@@ -622,10 +625,10 @@ async def message_get_text(message: types.Message, state: FSMContext):
                 msg.date,
             )
     except Exception as e:
-        print(e)
+        logger.error("Error: %s", e)
         await state.update_data(phone=unformat_number(data["phone"]))
         data = await state.get_data()
-        print(data["phone"])
+        logger.debug("Phone data: %s", data["phone"])
         for i in range(len(users)):
             users_phones.append(unformat_number(str(users[i]["phone_number"])))
             users_id.append(users[i]["telegram_id"])
@@ -684,7 +687,7 @@ async def message_send_accept(call: types.CallbackQuery, state: FSMContext):
     telegram_id = data["phone"]
     contract = await db.select_contract(int(telegram_id))
     contract = contract[0]["contract"]
-    print(telegram_id)
+    logger.debug("Telegram ID: %s", telegram_id)
     await call.answer()
     type = data["type"]
     if type == "text":
@@ -1037,21 +1040,14 @@ async def message_send_accept_sms(call: types.CallbackQuery, state: FSMContext):
                 )
                 await db.message("BOT", 10001, msg.html_text, msg.date)
                 if len(text) >= 53:
-                    print("transliterate")
+                    logger.debug("Applying transliteration for SMS")
                     email_text_t = transliterate.translit(text, "uk", reversed=True)
                     text = f"{email_text_t}\nt.me/infoaura_bot"
                 else:
-                    print("no transliterate")
+                    logger.debug("No transliteration needed for SMS")
                     text = f"{text}\nt.me/infoaura_bot"
                 async with aiohttp.ClientSession() as session:
-                    print(
-                        "Sending sms to:",
-                        phone,
-                        "with text:",
-                        text,
-                        "length of string:",
-                        len(text),
-                    )
+                    logger.info("Sending sms to: %s, length: %d", phone, len(text))
                     param = {
                         "version": "http",
                         "login": "380936425274",
@@ -1065,7 +1061,7 @@ async def message_send_accept_sms(call: types.CallbackQuery, state: FSMContext):
                     async with session.request(
                         "http", "https://smsukraine.com.ua/api/http.php", params=param
                     ) as sms:
-                        print("SMS: ", await sms.text())
+                        logger.info("SMS response: %s", await sms.text())
                 for admin in ADMINS:
                     msg_1 = await dp.bot.send_message(
                         admin,
@@ -1197,7 +1193,7 @@ async def message_alarm_by_contract(message: types.Message, state: FSMContext):
     try:
         alarm_message = "За Вашим підключенням зареєстрована аварійна ситуація. Перевірте термін усунення аварії пізніше."
         await db.insert_alarm(alarm_message, message.text)
-        print(message.text)
+        logger.info("Alarm contracts: %s", message.text)
         users = message.text.split(",")
         users_count = 0
         for user in users:
@@ -1205,7 +1201,7 @@ async def message_alarm_by_contract(message: types.Message, state: FSMContext):
                 if await db.set_alarm_for_users(user):
                     users_count += 1
             except Exception as e:
-                print(e)
+                logger.error("Error: %s", e)
         await message.answer(
             f"Зареєстровано аварію для {users_count} користувачів", reply_markup=back
         )
@@ -1226,7 +1222,7 @@ async def message_alarm_grp(call: types.CallbackQuery, state: FSMContext):
     try:
         alarm_message = "За Вашим підключенням зареєстрована аварійна ситуація. Перевірте термін усунення аварії пізніше."
         await db.insert_alarm(alarm_message, call.data)
-        print(call.data)
+        logger.info("Alarm group: %s", call.data)
         users = await users_with_alarm(int(call.data))
         users_count = 0
         for user in users:
@@ -1234,7 +1230,7 @@ async def message_alarm_grp(call: types.CallbackQuery, state: FSMContext):
                 if await db.set_alarm_for_users(user):
                     users_count += 1
             except Exception as e:
-                print(e)
+                logger.error("Error: %s", e)
                 pass
         await call.message.edit_text(
             f"Аварію успішно зареєстровано для {users_count} абонентів",
@@ -1271,7 +1267,7 @@ async def redacting_alarm_state(call: types.CallbackQuery, state: FSMContext):
     records = await db.get_alarm()
     keyboard_alarms = InlineKeyboardMarkup(row_width=1)
     txt = ""
-    print(records)
+    logger.debug("Alarm records: %s", records)
     if not records:
         await call.message.edit_text("Аварій не знайдено", reply_markup=back_inline)
         await state.finish()

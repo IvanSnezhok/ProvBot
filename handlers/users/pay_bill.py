@@ -1,4 +1,7 @@
 import logging
+
+logger = logging.getLogger(__name__)
+
 import random
 import re
 import uuid
@@ -33,7 +36,7 @@ async def contract_pay(message: types.Message, state: FSMContext):
 
     await database.search_query(tel=await db.select_tel(user_id=message.from_user.id))
     ban = await db.get_ban()
-    print(ban)
+    logger.debug("Ban list: %s", ban)
 
     if message.from_user.id in ban:
         await message.answer(_("Вітаємо! Для звернення, будь-ласка, скористайтесь нашим email технічної підтримки "
@@ -88,7 +91,7 @@ async def contract_pay(message: types.Message, state: FSMContext):
             await state.set_state('invoice_payload')
             await db.message("BOT", 10001, msg.html_text, msg.date)
     except IndexError as e:
-        print(e)
+        logger.warning("IndexError in contract_pay: %s", e)
         msg = await message.answer(text=_("Для поповнення рахунку введіть сумму поповненя!\n"
                                           "Наприклад:\n"
                                           "250,\n"
@@ -97,7 +100,7 @@ async def contract_pay(message: types.Message, state: FSMContext):
         await state.set_state('invoice_payload')
         await db.message("BOT", 10001, msg.html_text, msg.date)
     except Exception as e:
-        print(e)
+        logger.error("Error in contract_pay: %s", e)
         msg = await message.answer(text=_("Для поповнення рахунку введіть сумму поповненя!\n"
                                           "Наприклад:\n"
                                           "250,\n"
@@ -190,11 +193,11 @@ async def get_invoice_contract(message: types.Message, state: FSMContext):
 
 @dp.pre_checkout_query_handler(state='*')
 async def process_pre_checkout(query: types.PreCheckoutQuery):
-    print(f"[PRE_CHECKOUT] user={query.from_user.id}, payload={query.invoice_payload}")
+    logger.info("[PRE_CHECKOUT] user=%s, payload=%s", query.from_user.id, query.invoice_payload)
     logging.info(f"Pre-checkout: user={query.from_user.id}, amount={query.total_amount}, payload={query.invoice_payload}")
     try:
         await bot.answer_pre_checkout_query(pre_checkout_query_id=query.id, ok=True)
-        print(f"[PRE_CHECKOUT] ok=True sent for user={query.from_user.id}")
+        logger.info("[PRE_CHECKOUT] ok=True sent for user=%s", query.from_user.id)
     except Exception as e:
         logging.error(f"Pre-checkout error: user={query.from_user.id}: {e}", exc_info=True)
         await bot.answer_pre_checkout_query(

@@ -37,5 +37,13 @@ async def on_startup(dispatcher):
     scheduler.start()
 
 
+async def on_shutdown(dispatcher):
+    # Close PostgreSQL pool
+    if db.pool:
+        await db.pool.close()
+    # Notify admins
+    await on_shutdown_notify(dispatcher)
+
+
 if __name__ == '__main__':
-    executor.start_polling(dp, on_startup=on_startup, on_shutdown=on_shutdown_notify)
+    executor.start_polling(dp, on_startup=on_startup, on_shutdown=on_shutdown, skip_updates=True)

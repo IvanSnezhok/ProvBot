@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 logger = logging.getLogger(__name__)
@@ -61,49 +62,56 @@ async def bot_echo(message: types.Message):
                 reply_markup=unknown_request_button)
             await db.message("BOT", 10001, msg.html_text, msg.date)
         try:
-            for admin in ADMINS:
-                answer_reply = InlineKeyboardMarkup()
-                answer_reply.add(InlineKeyboardButton(text="Відповісти",
-                                                      callback_data=f"answer {message.from_user.id}"))
-                if message.content_type == 'text':
-                    msg = await dp.bot.send_message(chat_id=admin,
-                                                    text=f"Сообщения от пользователя: {message.from_user.full_name}\n"
-                                                         f"Текст сообщения: {message.text}\n"
-                                                         f"Телефон: {tel}\n"
-                                                         f"Номер договору: {database.data[2]}\n",
-                                                    parse_mode='HTML',
-                                                    reply_markup=answer_reply)
-                    await db.message("BOT", 10001, msg.html_text, msg.date)
-                elif message.content_type == 'photo':
-                    msg = await dp.bot.send_photo(chat_id=admin,
-                                                  photo=message.photo[-1].file_id,
-                                                  caption=f"Сообщения от пользователя: {message.from_user.full_name}\n"
-                                                          f"Текст сообщения: {message.caption}\n"
-                                                          f"Телефон: {tel}\n"
-                                                          f"Номер договору: {database.data[2]}\n",
-                                                  parse_mode='HTML',
-                                                  reply_markup=answer_reply)
-                    await db.message("BOT", 10001, msg.html_text, msg.date)
-                elif message.content_type == 'document':
-                    msg = await dp.bot.send_document(chat_id=admin,
-                                                     document=message.document.file_id,
-                                                     caption=f"Сообщения от пользователя:"
-                                                             f" {message.from_user.full_name}\n"
-                                                             f"Телефон: {tel}\n"
-                                                             f"Номер договору: {database.data[2]}\n",
-                                                     parse_mode='HTML',
-                                                     reply_markup=answer_reply)
-                    await db.message("BOT", 10001, msg.html_text, msg.date)
-                elif message.content_type == 'video':
-                    msg = await dp.bot.send_video(chat_id=admin,
-                                                  video=message.video.file_id,
-                                                  caption=f"Сообщения от пользователя:"
-                                                          f" {message.from_user.full_name}\n"
-                                                          f"Телефон: {tel}\n"
-                                                          f"Номер договору: {database.data[2]}\n",
-                                                  parse_mode='HTML',
-                                                  reply_markup=answer_reply)
-                    await db.message("BOT", 10001, msg.html_text, msg.date)
+            answer_reply = InlineKeyboardMarkup()
+            answer_reply.add(InlineKeyboardButton(text="Відповісти",
+                                                  callback_data=f"answer {message.from_user.id}"))
+            if message.content_type == 'text':
+                notify_text = (f"Сообщения от пользователя: {message.from_user.full_name}\n"
+                               f"Текст сообщения: {message.text}\n"
+                               f"Телефон: {tel}\n"
+                               f"Номер договору: {database.data[2]}\n")
+                await asyncio.gather(
+                    *[dp.bot.send_message(chat_id=admin, text=notify_text,
+                                          parse_mode='HTML', reply_markup=answer_reply)
+                      for admin in ADMINS],
+                    return_exceptions=True
+                )
+            elif message.content_type == 'photo':
+                notify_caption = (f"Сообщения от пользователя: {message.from_user.full_name}\n"
+                                  f"Текст сообщения: {message.caption}\n"
+                                  f"Телефон: {tel}\n"
+                                  f"Номер договору: {database.data[2]}\n")
+                await asyncio.gather(
+                    *[dp.bot.send_photo(chat_id=admin, photo=message.photo[-1].file_id,
+                                        caption=notify_caption, parse_mode='HTML',
+                                        reply_markup=answer_reply)
+                      for admin in ADMINS],
+                    return_exceptions=True
+                )
+            elif message.content_type == 'document':
+                notify_caption = (f"Сообщения от пользователя:"
+                                  f" {message.from_user.full_name}\n"
+                                  f"Телефон: {tel}\n"
+                                  f"Номер договору: {database.data[2]}\n")
+                await asyncio.gather(
+                    *[dp.bot.send_document(chat_id=admin, document=message.document.file_id,
+                                           caption=notify_caption, parse_mode='HTML',
+                                           reply_markup=answer_reply)
+                      for admin in ADMINS],
+                    return_exceptions=True
+                )
+            elif message.content_type == 'video':
+                notify_caption = (f"Сообщения от пользователя:"
+                                  f" {message.from_user.full_name}\n"
+                                  f"Телефон: {tel}\n"
+                                  f"Номер договору: {database.data[2]}\n")
+                await asyncio.gather(
+                    *[dp.bot.send_video(chat_id=admin, video=message.video.file_id,
+                                        caption=notify_caption, parse_mode='HTML',
+                                        reply_markup=answer_reply)
+                      for admin in ADMINS],
+                    return_exceptions=True
+                )
         except Exception as err:
             logging.exception(err)
     else:
@@ -126,44 +134,50 @@ async def bot_echo(message: types.Message):
                 reply_markup=unknown_request_button)
             await db.message("BOT", 10001, msg.html_text, msg.date)
         try:
-            for admin in ADMINS:
-                answer_reply = InlineKeyboardMarkup()
-                answer_reply.add(InlineKeyboardButton(text="Відповісти",
-                                                      callback_data=f"answer {message.from_user.id}"))
-                if message.content_type == 'text':
-                    msg = await dp.bot.send_message(chat_id=admin,
-                                                    text=f"Сообщения от пользователя: {message.from_user.full_name}\n"
-                                                         f"Текст сообщения: {message.text}\n"
-                                                         f"Пользователь без телефона",
-                                                    parse_mode='HTML',
-                                                    reply_markup=answer_reply)
-                    await db.message("BOT", 10001, msg.html_text, msg.date)
-                elif message.content_type == 'photo':
-                    msg = await dp.bot.send_photo(chat_id=admin,
-                                                  photo=message.photo[-1].file_id,
-                                                  caption=f"Сообщения от пользователя: {message.from_user.full_name}\n"
-                                                          f"Пользователь без телефона",
-                                                  parse_mode='HTML',
-                                                  reply_markup=answer_reply)
-                    await db.message("BOT", 10001, msg.html_text, msg.date)
-                elif message.content_type == 'document':
-                    msg = await dp.bot.send_document(chat_id=admin,
-                                                     document=message.document.file_id,
-                                                     caption=f"Сообщения от пользователя:"
-                                                             f" {message.from_user.full_name}\n"
-                                                             f"Пользователь без телефона",
-                                                     reply_markup=answer_reply)
-                    await db.message("BOT", 10001, msg.html_text, msg.date)
-                elif message.content_type == 'video':
-                    msg = await dp.bot.send_video(chat_id=admin,
-                                                  video=message.video.file_id,
-                                                  caption=f"Сообщения от пользователя:"
-                                                          f" {message.from_user.full_name}\n"
-
-                                                          f"Пользователь без телефона",
-                                                  parse_mode='HTML',
-                                                  reply_markup=answer_reply)
-                    await db.message("BOT", 10001, msg.html_text, msg.date)
+            answer_reply = InlineKeyboardMarkup()
+            answer_reply.add(InlineKeyboardButton(text="Відповісти",
+                                                  callback_data=f"answer {message.from_user.id}"))
+            if message.content_type == 'text':
+                notify_text = (f"Сообщения от пользователя: {message.from_user.full_name}\n"
+                               f"Текст сообщения: {message.text}\n"
+                               f"Пользователь без телефона")
+                await asyncio.gather(
+                    *[dp.bot.send_message(chat_id=admin, text=notify_text,
+                                          parse_mode='HTML', reply_markup=answer_reply)
+                      for admin in ADMINS],
+                    return_exceptions=True
+                )
+            elif message.content_type == 'photo':
+                notify_caption = (f"Сообщения от пользователя: {message.from_user.full_name}\n"
+                                  f"Пользователь без телефона")
+                await asyncio.gather(
+                    *[dp.bot.send_photo(chat_id=admin, photo=message.photo[-1].file_id,
+                                        caption=notify_caption, parse_mode='HTML',
+                                        reply_markup=answer_reply)
+                      for admin in ADMINS],
+                    return_exceptions=True
+                )
+            elif message.content_type == 'document':
+                notify_caption = (f"Сообщения от пользователя:"
+                                  f" {message.from_user.full_name}\n"
+                                  f"Пользователь без телефона")
+                await asyncio.gather(
+                    *[dp.bot.send_document(chat_id=admin, document=message.document.file_id,
+                                           caption=notify_caption, reply_markup=answer_reply)
+                      for admin in ADMINS],
+                    return_exceptions=True
+                )
+            elif message.content_type == 'video':
+                notify_caption = (f"Сообщения от пользователя:"
+                                  f" {message.from_user.full_name}\n"
+                                  f"Пользователь без телефона")
+                await asyncio.gather(
+                    *[dp.bot.send_video(chat_id=admin, video=message.video.file_id,
+                                        caption=notify_caption, parse_mode='HTML',
+                                        reply_markup=answer_reply)
+                      for admin in ADMINS],
+                    return_exceptions=True
+                )
         except Exception as err:
             logging.exception(err)
 

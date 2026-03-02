@@ -12,6 +12,7 @@ from keyboards.inline.callback_datas import start_callback
 from keyboards.inline.start_keyboard import choice_lang
 from loader import dp, db
 from middlewares import _, __
+from middlewares.language_middleware import invalidate_lang_cache
 from states.get_client import Client, Request
 from utils.db_api import database
 from utils.format_number import format_number
@@ -60,6 +61,7 @@ async def get_phone_state(message: types.Message):
 async def lang_reply(call: CallbackQuery, state: FSMContext):
     await db.message(call.from_user.full_name, call.from_user.id, call.message.text, call.message.date)
     await db.set_lang(call.data[7:].lower(), call.from_user.id)
+    invalidate_lang_cache(call.from_user.id)
     await call.answer()
     msg = await call.message.edit_text(
         text=_(

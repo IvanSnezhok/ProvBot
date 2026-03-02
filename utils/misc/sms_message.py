@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import datetime
 import transliterate
@@ -21,8 +22,8 @@ from aiogram.utils.exceptions import UserDeactivated, BotBlocked
 SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
 
 
-async def get_gmail_service():
-    """Створення сервісу Gmail API використовуючи service account."""
+def _get_gmail_service():
+    """Створення сервісу Gmail API використовуючи service account (синхронна)."""
     creds = None
 
     # Спробуємо завантажити збережені токени
@@ -49,23 +50,93 @@ async def get_gmail_service():
     return build('gmail', 'v1', credentials=creds)
 
 
-async def send_message_sms(phone: int = None, text: str = None):
-    if phone is None or text is None:
-        # Створюємо Gmail API сервіс
-        service = await get_gmail_service()
+def _get_unread_emails():
+    """Отримує непрочитані листи з Gmail (синхронна, для run_in_executor)."""
+    service = _get_gmail_service()
 
-        # Отримуємо непрочитані повідомлення
-        results = service.users().messages().list(
+    # Отримуємо непрочитані повідомлення
+    results = service.users().messages().list(
+        userId='me',
+        q='is:unread'
+    ).execute()
+
+    messages = results.get('messages', [])
+
+    print("Total Messages Unseen:", len(messages) if messages else 0)
+
+    if not messages:
+        print("No unread messages found.")
+        return []
+
+    parsed_emails = []
+
+    for message in messages:
+        msg = service.users().messages().get(
             userId='me',
-            q='is:unread'
+            id=message['id'],
+            format='full'
         ).execute()
 
-        messages = results.get('messages', [])
+        # Позначаємо як прочитане
+        service.users().messages().modify(
+            userId='me',
+            id=message['id'],
+            body={'removeLabelIds': ['UNREAD']}
+        ).execute()
 
-        print("Total Messages Unseen:", len(messages) if messages else 0)
+        # Отримуємо заголовки
+        headers = msg['payload']['headers']
+        subject = ""
+        sender = ""
+        date = ""
+
+        for header in headers:
+            if header['name'] == 'Subject':
+                subject = header['value']
+            if header['name'] == 'From':
+                sender = header['value']
+            if header['name'] == 'Date':
+                date = header['value']
+
+        print("\n===========================================")
+        print("Subject: ", subject)
+        print("From: ", sender)
+        print("Date: ", date)
+
+        # Отримуємо текст повідомлення
+        message_text = ""
+
+        if 'parts' not in msg['payload']:
+            if 'data' in msg['payload'].get('body', {}):
+                data = msg['payload']['body']['data']
+                message_text = base64.urlsafe_b64decode(data).decode('utf-8')
+        else:
+            parts = msg['payload']['parts']
+            for part in parts:
+                if part['mimeType'] == 'text/plain' or part['mimeType'] == 'text/html':
+                    if 'data' in part.get('body', {}):
+                        data = part['body']['data']
+                        message_text = base64.urlsafe_b64decode(data).decode('utf-8')
+                        break
+
+        print("Message: \n", message_text)
+        print("==========================================\n")
+
+        parsed_emails.append({'phone': subject, 'text': message_text})
+
+    return parsed_emails
+
+
+async def send_message_sms(phone: int = None, text: str = None):
+    if phone is None or text is None:
+        # Отримуємо непрочитані листи з Gmail через executor (щоб не блокувати event loop)
+        loop = asyncio.get_event_loop()
+        emails = await loop.run_in_executor(None, _get_unread_emails)
+
+        if not emails:
+            return
 
         # Отримуємо всіх користувачів з бази даних
-        await db.create()
         users = await db.select_all_users()
         users_phones = []
         users_id = []
@@ -74,67 +145,8 @@ async def send_message_sms(phone: int = None, text: str = None):
             users_id.append(users[i]['telegram_id'])
 
         # Списки для зберігання даних електронної пошти
-        email_phone = []
-        email_text = []
-
-        if not messages:
-            print("No unread messages found.")
-            return
-
-        for message in messages:
-            msg = service.users().messages().get(
-                userId='me',
-                id=message['id'],
-                format='full'
-            ).execute()
-
-            # Позначаємо як прочитане
-            service.users().messages().modify(
-                userId='me',
-                id=message['id'],
-                body={'removeLabelIds': ['UNREAD']}
-            ).execute()
-
-            # Отримуємо заголовки
-            headers = msg['payload']['headers']
-            subject = ""
-            sender = ""
-            date = ""
-
-            for header in headers:
-                if header['name'] == 'Subject':
-                    subject = header['value']
-                if header['name'] == 'From':
-                    sender = header['value']
-                if header['name'] == 'Date':
-                    date = header['value']
-
-            print("\n===========================================")
-            print("Subject: ", subject)
-            print("From: ", sender)
-            print("Date: ", date)
-
-            # Отримуємо текст повідомлення
-            message_text = ""
-
-            if 'parts' not in msg['payload']:
-                if 'data' in msg['payload'].get('body', {}):
-                    data = msg['payload']['body']['data']
-                    message_text = base64.urlsafe_b64decode(data).decode('utf-8')
-            else:
-                parts = msg['payload']['parts']
-                for part in parts:
-                    if part['mimeType'] == 'text/plain' or part['mimeType'] == 'text/html':
-                        if 'data' in part.get('body', {}):
-                            data = part['body']['data']
-                            message_text = base64.urlsafe_b64decode(data).decode('utf-8')
-                            break
-
-            print("Message: \n", message_text)
-            print("==========================================\n")
-
-            email_phone.append(subject)
-            email_text.append(message_text)
+        email_phone = [e['phone'] for e in emails]
+        email_text = [e['text'] for e in emails]
 
         # Решта вашого коду залишається майже ідентичною
         for i in range(len(email_phone)):

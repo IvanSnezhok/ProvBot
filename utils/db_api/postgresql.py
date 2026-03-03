@@ -32,15 +32,15 @@ class Database:
                       execute: bool = False
                       ):
         async with self.pool.acquire() as connection:
-            if execute:
-                async with connection.transaction():
-                    result = await connection.execute(command, *args)
-            elif fetch:
+            if fetch:
                 result = await connection.fetch(command, *args)
             elif fetchval:
                 result = await connection.fetchval(command, *args)
             elif fetchrow:
                 result = await connection.fetchrow(command, *args)
+            elif execute:
+                async with connection.transaction():
+                    result = await connection.execute(command, *args)
             return result
 
     async def create_table_users(self):

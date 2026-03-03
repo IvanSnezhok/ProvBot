@@ -118,7 +118,7 @@ async def pay_balance(contract, payload):
                 id = user[1]
             except IndexError:
                 user = None
-                logging.info("User not Found")
+                logger.info("User not Found")
                 return False
             if paket:
                 await cur.execute(f"SELECT price FROM plans2 WHERE id = {paket}")
@@ -127,7 +127,7 @@ async def pay_balance(contract, payload):
                 price = price[0]
             except IndexError:
                 price = None
-                logging.info("Price not find")
+                logger.info("Price not find")
                 return False
             await cur.execute(f"UPDATE users set balance = balance + {payload} WHERE contract={contract}")
             await cur.execute("INSERT INTO pays (mid,cash,time,admin,reason,coment) VALUES (%s, %s, %s, %s, %s, %s)",
@@ -170,7 +170,7 @@ async def t_pay(contract):
                 id = user[8]
             except IndexError:
                 user = None
-                logging.info("User not Found")
+                logger.info("User not Found")
                 return False
 
             if time_pay == 0:
@@ -182,7 +182,7 @@ async def t_pay(contract):
                     logger.debug("Tariff price: %s", price)
                 except IndexError:
                     price = None
-                    logging.info("Price not find")
+                    logger.info("Price not find")
                     return False
 
                 if old_balance > 0:

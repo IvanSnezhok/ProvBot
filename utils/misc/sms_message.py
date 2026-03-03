@@ -1,12 +1,15 @@
 import asyncio
 import base64
 import datetime
+import logging
 import transliterate
 import os.path
 import json
 import pickle
 
 import aiohttp
+
+logger = logging.getLogger(__name__)
 from asyncio import sleep
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -62,10 +65,10 @@ def _get_unread_emails():
 
     messages = results.get('messages', [])
 
-    print("Total Messages Unseen:", len(messages) if messages else 0)
+    logger.info("Total Messages Unseen: %s", len(messages) if messages else 0)
 
     if not messages:
-        print("No unread messages found.")
+        logger.info("No unread messages found.")
         return []
 
     parsed_emails = []
@@ -98,10 +101,7 @@ def _get_unread_emails():
             if header['name'] == 'Date':
                 date = header['value']
 
-        print("\n===========================================")
-        print("Subject: ", subject)
-        print("From: ", sender)
-        print("Date: ", date)
+        logger.info("Subject: %s, From: %s, Date: %s", subject, sender, date)
 
         # Отримуємо текст повідомлення
         message_text = ""
@@ -119,8 +119,7 @@ def _get_unread_emails():
                         message_text = base64.urlsafe_b64decode(data).decode('utf-8')
                         break
 
-        print("Message: \n", message_text)
-        print("==========================================\n")
+        logger.debug("Message: %s", message_text)
 
         parsed_emails.append({'phone': subject, 'text': message_text})
 
@@ -154,46 +153,44 @@ async def send_message_sms(phone: int = None, text: str = None):
             if email_phone[i] in users_phones:
                 try:
                     divider = email_text[i].find('-----')
-                    print(number(email_phone[i]))
+                    logger.debug("Phone: %s", number(email_phone[i]))
                     telegram_id = await db.select_id_by_phone(phone_number=number(email_phone[i]))
                     telegram_id = telegram_id[0]['telegram_id']
-                    print(telegram_id)
+                    logger.debug("Telegram ID: %s", telegram_id)
                     if divider:
                         await dp.bot.send_message(telegram_id, email_text[i][divider + 5:])
                         await db.message("BOT", 10001, email_text[i][divider + 5:], datetime.datetime.now())
-                        print("Message sent via bot to:", telegram_id)
+                        logger.info("Message sent via bot to: %s", telegram_id)
                     else:
                         await dp.bot.send_message(telegram_id, email_text[i])
                         await db.message("BOT", 10001, email_text[i], datetime.datetime.now())
-                        print("Message sent via bot to:", telegram_id)
+                        logger.info("Message sent via bot to: %s", telegram_id)
                 except UserDeactivated as e:
                     # Код для відправки SMS залишається незмінним
-                    print("Message sent via sms to:", email_phone[i])
+                    logger.info("Sending SMS (UserDeactivated) to: %s", email_phone[i])
                     try:
                         divider = email_text[i].find('-----')
                         if divider:
                             message_sms_text = f"{email_text[i][:divider]}\nt.me/infoaura_bot"
                         else:
                             message_sms_text = f"{email_text[i]}\nt.me/infoaura_bot"
-                        print(len(message_sms_text), " length of  string")
+                        logger.debug("SMS text length: %s", len(message_sms_text))
                         if len(message_sms_text) >= 70:
-                            print('transliterate')
+                            logger.debug("Applying transliteration")
                             if divider:
                                 email_text_t = transliterate.translit(email_text[i][:divider], 'uk', reversed=True)
                             else:
                                 email_text_t = transliterate.translit(email_text[i], 'uk', reversed=True)
                             message_sms_text = f"{email_text_t}\nt.me/infoaura_bot"
                         else:
-                            print("no transliterate")
+                            logger.debug("No transliteration needed")
                             if divider:
                                 message_sms_text = f"{email_text[i][:divider]}\nt.me/infoaura_bot"
                             else:
                                 message_sms_text = f"{email_text[i]}\nt.me/infoaura_bot"
                         await sleep(60)
                         async with aiohttp.ClientSession() as session:
-                            print("Sending sms to:", email_phone[i],
-                                  "with text:", message_sms_text,
-                                  "length of string:", len(message_sms_text))
+                            logger.info("Sending SMS to: %s, length: %s", email_phone[i], len(message_sms_text))
                             param = {'version': 'http',
                                      'login': '380936425274',
                                      "pass": "wxgjtqyo",
@@ -204,37 +201,35 @@ async def send_message_sms(phone: int = None, text: str = None):
                                      'message': f'{message_sms_text}'}
                             async with session.request('http', "https://smsukraine.com.ua/api/http.php",
                                                        params=param) as sms:
-                                print("SMS: ", await sms.text())
+                                logger.info("SMS response: %s", await sms.text())
                     except Exception as e:
-                        print(e)
+                        logger.exception("SMS send error: %s", e)
                     continue
                 except BotBlocked:
-                    print("Message sent via sms to:", email_phone[i])
+                    logger.info("Sending SMS (BotBlocked) to: %s", email_phone[i])
                     try:
                         divider = email_text[i].find('-----')
                         if divider:
                             message_sms_text = f"{email_text[i][:divider]}\nt.me/infoaura_bot"
                         else:
                             message_sms_text = f"{email_text[i]}\nt.me/infoaura_bot"
-                        print(len(message_sms_text), " length of  string")
+                        logger.debug("SMS text length: %s", len(message_sms_text))
                         if len(message_sms_text) >= 70:
-                            print('transliterate')
+                            logger.debug("Applying transliteration")
                             if divider:
                                 email_text_t = transliterate.translit(email_text[i][:divider], 'uk', reversed=True)
                             else:
                                 email_text_t = transliterate.translit(email_text[i], 'uk', reversed=True)
                             message_sms_text = f"{email_text_t}\nt.me/infoaura_bot"
                         else:
-                            print("no transliterate")
+                            logger.debug("No transliteration needed")
                             if divider:
                                 message_sms_text = f"{email_text[i][:divider]}\nt.me/infoaura_bot"
                             else:
                                 message_sms_text = f"{email_text[i]}\nt.me/infoaura_bot"
                         await sleep(60)
                         async with aiohttp.ClientSession() as session:
-                            print("Sending sms to:", email_phone[i],
-                                  "with text:", message_sms_text,
-                                  "length of string:", len(message_sms_text))
+                            logger.info("Sending SMS to: %s, length: %s", email_phone[i], len(message_sms_text))
                             param = {'version': 'http',
                                      'login': '380936425274',
                                      "password": "wxgjtqyo",
@@ -244,37 +239,35 @@ async def send_message_sms(phone: int = None, text: str = None):
                                      'message': f'{message_sms_text}'}
                             async with session.request('http', "https://smsukraine.com.ua/api/http.php",
                                                        params=param) as sms:
-                                print("SMS: ", await sms.text())
+                                logger.info("SMS response: %s", await sms.text())
                     except Exception as e:
-                        print(e)
+                        logger.exception("SMS send error: %s", e)
                     continue
             else:
-                print("Message sent via sms to:", email_phone[i])
+                logger.info("Sending SMS (not in bot users) to: %s", email_phone[i])
                 try:
                     divider = email_text[i].find('-----')
                     if divider:
                         message_sms_text = f"{email_text[i][:divider]}\nt.me/infoaura_bot"
                     else:
                         message_sms_text = f"{email_text[i]}\nt.me/infoaura_bot"
-                    print(len(message_sms_text), " length of  string")
+                    logger.debug("SMS text length: %s", len(message_sms_text))
                     if len(message_sms_text) >= 70:
-                        print('transliterate')
+                        logger.debug("Applying transliteration")
                         if divider:
                             email_text_t = transliterate.translit(email_text[i][:divider], 'uk', reversed=True)
                         else:
                             email_text_t = transliterate.translit(email_text[i], 'uk', reversed=True)
                         message_sms_text = f"{email_text_t}\nt.me/infoaura_bot"
                     else:
-                        print("no transliterate")
+                        logger.debug("No transliteration needed")
                         if divider:
                             message_sms_text = f"{email_text[i][:divider]}\nt.me/infoaura_bot"
                         else:
                             message_sms_text = f"{email_text[i]}\nt.me/infoaura_bot"
                     await sleep(60)
                     async with aiohttp.ClientSession() as session:
-                        print("Sending sms to:", email_phone[i],
-                              "with text:", message_sms_text,
-                              "length of string:", len(message_sms_text))
+                        logger.info("Sending SMS to: %s, length: %s", email_phone[i], len(message_sms_text))
                         param = {'version': 'http',
                                  'login': '380936425274',
                                  "password": "wxgjtqyo",
@@ -284,9 +277,9 @@ async def send_message_sms(phone: int = None, text: str = None):
                                  'message': f'{message_sms_text}'}
                         async with session.request('http', "https://smsukraine.com.ua/api/http.php",
                                                    params=param) as sms:
-                            print("SMS: ", await sms.text())
+                            logger.info("SMS response: %s", await sms.text())
                 except Exception as e:
-                    print(e)
+                    logger.exception("SMS send error: %s", e)
                     pass
     else:
         users = await db.select_all_users()
@@ -298,7 +291,7 @@ async def send_message_sms(phone: int = None, text: str = None):
             if int(phone) in users_id:
                 await dp.bot.send_message(int(phone), text)
                 await db.message("BOT", 10001, text, datetime.datetime.now())
-                print("Message sent via bot to:", int(phone))
+                logger.info("Message sent via bot to: %s", int(phone))
                 result = f"Message sent via bot to: {int(phone)}"
                 return result
             elif phone in users_phones:
@@ -306,26 +299,24 @@ async def send_message_sms(phone: int = None, text: str = None):
                 telegram_id = telegram_id[0]['telegram_id']
                 msg = await dp.bot.send_message(telegram_id, text)
                 await db.message("BOT", 10001, text, datetime.datetime.now())
-                print("Message sent via bot to:", telegram_id)
+                logger.info("Message sent via bot to: %s", telegram_id)
                 result = f"Message sent via bot to: {telegram_id}"
                 return result
         else:
-            print("Message sent via sms to:", phone)
+            logger.info("Sending SMS (direct) to: %s", phone)
             try:
                 message_sms_text = f"{text}\nt.me/infoaura_bot"
-                print(len(message_sms_text), " length of  string")
+                logger.debug("SMS text length: %s", len(message_sms_text))
                 if len(message_sms_text) >= 70:
-                    print('transliterate')
+                    logger.debug("Applying transliteration")
                     email_text_t = transliterate.translit(text, 'uk', reversed=True)
                     message_sms_text = f"{email_text_t}\nt.me/infoaura_bot"
                 else:
-                    print("no transliterate")
+                    logger.debug("No transliteration needed")
                     message_sms_text = f"{text}\nt.me/infoaura_bot"
                 await sleep(60)
                 async with aiohttp.ClientSession() as session:
-                    print("Sending sms to:", phone,
-                          "with text:", message_sms_text,
-                          "length of string:", len(message_sms_text))
+                    logger.info("Sending SMS to: %s, length: %s", phone, len(message_sms_text))
                     param = {'version': 'http',
                              'login': '380936425274',
                              "password": "wxgjtqyo",
@@ -335,9 +326,9 @@ async def send_message_sms(phone: int = None, text: str = None):
                              'message': f'{message_sms_text}'}
                     async with session.request('http', "https://smsukraine.com.ua/api/http.php",
                                                params=param) as sms:
-                        print("SMS: ", await sms.text())
+                        logger.info("SMS response: %s", await sms.text())
                         return "SMS: " + await sms.text()
             except Exception as e:
-                print(e)
+                logger.exception("SMS send error: %s", e)
                 return e
 

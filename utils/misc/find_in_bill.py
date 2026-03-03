@@ -3,6 +3,8 @@ import time
 
 from utils.db_api import database
 
+logger = logging.getLogger(__name__)
+
 _streets_cache = None
 
 
@@ -17,7 +19,7 @@ async def find(contract=None, phone=None, name=None, address: list = None):
                 _streets_cache = streets
             else:
                 streets = _streets_cache
-            logging.debug("Streets: %s", streets)
+            logger.debug("Streets: %s", streets)
             try:
                 if address:
                     if address[0] in streets:
@@ -48,7 +50,7 @@ async def find(contract=None, phone=None, name=None, address: list = None):
                             raise ValueError("Too many arguments")
 
             except TypeError as e:
-                logging.debug("TypeError in find(): %s", e)
+                logger.debug("TypeError in find(): %s", e)
             if contract:
                 await cur.execute("SELECT name, balance, contract, fio, state, paket, telefon, street, house, room, ip, id "
                                   "FROM `users` "
@@ -61,10 +63,10 @@ async def find(contract=None, phone=None, name=None, address: list = None):
                 sql = "SELECT name, balance, contract, fio, state, paket, telefon, street, house, room, ip, id " \
                       "FROM `users` " \
                       f"WHERE fio LIKE '%{name}%' "
-                logging.debug("SQL query: %s", sql)
+                logger.debug("SQL query: %s", sql)
                 await cur.execute(sql.encode('cp1251'))
             result = await cur.fetchall()
-            logging.debug("Query result: %s", result)
+            logger.debug("Query result: %s", result)
 
             if len(result) == 1:
                 result = result[0]

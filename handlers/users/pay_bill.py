@@ -36,7 +36,7 @@ async def contract_pay(message: types.Message, state: FSMContext):
 
     await database.search_query(tel=await db.select_tel(user_id=message.from_user.id))
     ban = await db.get_ban()
-    print(ban)
+    logger.debug("Ban list: %s", ban)
 
     if message.from_user.id in ban:
         await message.answer(_("Вітаємо! Для звернення, будь-ласка, скористайтесь нашим email технічної підтримки "
@@ -91,7 +91,7 @@ async def contract_pay(message: types.Message, state: FSMContext):
             await state.set_state('invoice_payload')
             await db.message("BOT", 10001, msg.html_text, msg.date)
     except IndexError as e:
-        print(e)
+        logger.debug("IndexError in contract_pay: %s", e)
         msg = await message.answer(text=_("Для поповнення рахунку введіть сумму поповненя!\n"
                                           "Наприклад:\n"
                                           "250,\n"
@@ -100,7 +100,7 @@ async def contract_pay(message: types.Message, state: FSMContext):
         await state.set_state('invoice_payload')
         await db.message("BOT", 10001, msg.html_text, msg.date)
     except Exception as e:
-        print(e)
+        logger.exception("Error in contract_pay: %s", e)
         msg = await message.answer(text=_("Для поповнення рахунку введіть сумму поповненя!\n"
                                           "Наприклад:\n"
                                           "250,\n"
@@ -198,13 +198,12 @@ async def get_invoice_contract(message: types.Message, state: FSMContext):
 
 @dp.pre_checkout_query_handler(state='*')
 async def process_pre_checkout(query: types.PreCheckoutQuery):
-    print(f"[PRE_CHECKOUT] user={query.from_user.id}, payload={query.invoice_payload}")
-    logging.info(f"Pre-checkout: user={query.from_user.id}, amount={query.total_amount}, payload={query.invoice_payload}")
+    logger.info("Pre-checkout: user=%s, amount=%s, payload=%s", query.from_user.id, query.total_amount, query.invoice_payload)
     try:
         await bot.answer_pre_checkout_query(pre_checkout_query_id=query.id, ok=True)
-        print(f"[PRE_CHECKOUT] ok=True sent for user={query.from_user.id}")
+        logger.info("Pre-checkout ok=True sent for user=%s", query.from_user.id)
     except Exception as e:
-        logging.error(f"Pre-checkout error: user={query.from_user.id}: {e}", exc_info=True)
+        logger.error("Pre-checkout error: user=%s: %s", query.from_user.id, e, exc_info=True)
         await bot.answer_pre_checkout_query(
             pre_checkout_query_id=query.id, ok=False,
             error_message="Виникла помилка. Спробуйте ще раз."
@@ -213,7 +212,7 @@ async def process_pre_checkout(query: types.PreCheckoutQuery):
 
 @dp.message_handler(content_types=ContentType.SUCCESSFUL_PAYMENT, state="*")
 async def process_successful_pay(message: types.Message, state: FSMContext):
-    logging.info(f"SUCCESSFUL_PAYMENT received: user={message.from_user.id}, amount={message.successful_payment.total_amount}")
+    logger.info("SUCCESSFUL_PAYMENT received: user=%s, amount=%s", message.from_user.id, message.successful_payment.total_amount)
     data = await state.get_data()
     try:
         await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
@@ -225,7 +224,7 @@ async def process_successful_pay(message: types.Message, state: FSMContext):
             await db.add_bill(bill_id, message.from_user.id, message.date,
                               message.from_user.username, contract, payload)
             await database.pay_balance(contract=contract, payload=payload)
-            logging.info(f"Manual payment OK: contract={contract}, payload={payload}, user={message.from_user.id}")
+            logger.info("Manual payment OK: contract=%s, payload=%s, user=%s", contract, payload, message.from_user.id)
             notify_text = f"Користувач {contract} успішно поповнив рахунок на {payload} {message.successful_payment.currency}"
             results = await asyncio.gather(
                 *[dp.bot.send_message(chat_id=admin, text=notify_text) for admin in ADMINS],
@@ -263,7 +262,7 @@ async def process_successful_pay(message: types.Message, state: FSMContext):
                 await db.add_bill(bill_id, message.from_user.id, message.date,
                                   message.from_user.username, contract_str, str(payload))
             await database.pay_balance(contract=contract_str, payload=payload)
-            logging.info(f"Auto-tariff payment OK: contract={contract_str}, payload={payload}, user={message.from_user.id}")
+            logger.info("Auto-tariff payment OK: contract=%s, payload=%s, user=%s", contract_str, payload, message.from_user.id)
             notify_text = f"Користувач {contract_str} успішно поповнив рахунок на {payload} {message.successful_payment.currency}"
             results = await asyncio.gather(
                 *[dp.bot.send_message(chat_id=admin, text=notify_text) for admin in ADMINS],

@@ -5,6 +5,7 @@ from aiogram import types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 from middlewares import _, __
+from middlewares.language_middleware import invalidate_lang_cache
 from keyboards.default.buttons import lang_change
 
 
@@ -24,6 +25,7 @@ async def change_lang(message: types.Message):
 async def changed_lang(message: types.Message):
     await db.message(message.from_user.full_name, message.from_user.id, message.text, message.date)
     await db.set_lang(message.text[3:].lower(), message.from_user.id)
+    invalidate_lang_cache(message.from_user.id)
     if message.text[3:] == "UA":
         return_button = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[
             [

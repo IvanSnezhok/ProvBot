@@ -15,6 +15,8 @@ async def on_startup(dispatcher):
     # Уведомляет про запуск
     logging.info("Создаем подключение к локальной ДБ")
     await db.create()
+    logging.info("Создаем пул подключений к биллингу (MySQL)")
+    await database.create_mysql_pool()
     logging.info("Создаем таблицу пользователей")
     await db.create_table_users()
     logging.info("Создаем таблицу сообщений")
@@ -38,6 +40,10 @@ async def on_startup(dispatcher):
 
 
 async def on_shutdown(dispatcher):
+    # Close MySQL billing pool
+    if database.pool:
+        database.pool.close()
+        await database.pool.wait_closed()
     # Close PostgreSQL pool
     if db.pool:
         await db.pool.close()

@@ -130,7 +130,7 @@ def _get_unread_emails():
 async def send_message_sms(phone: int = None, text: str = None):
     if phone is None or text is None:
         # Отримуємо непрочитані листи з Gmail через executor (щоб не блокувати event loop)
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         emails = await loop.run_in_executor(None, _get_unread_emails)
 
         if not emails:

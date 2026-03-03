@@ -1,6 +1,8 @@
 import asyncio
 import logging
 
+logger = logging.getLogger(__name__)
+
 import asyncpg
 from aiogram import types
 from aiogram.dispatcher import FSMContext
@@ -87,19 +89,25 @@ async def ua_tel_get(message: types.Message, state: FSMContext):
     await database.search_query(tel)
     new_client_text = (f"Новий клієнт: {message.from_user.full_name}, {message.from_user.id}\n"
                        f"З номером телефону: {tel}\n")
-    await asyncio.gather(
+    results = await asyncio.gather(
         *[dp.bot.send_message(admin, text=new_client_text) for admin in ADMINS],
         return_exceptions=True
     )
+    for r in results:
+        if isinstance(r, Exception):
+            logger.error("Failed to notify admin: %s", r)
     if len(database.data) > 0:
         billing_text = (f"Клієнт знайдений в білінгу, його номер договору "
                         f"{database.data[2]}\n")
     else:
         billing_text = f"Клієнт не знайдений в білінгу\n"
-    await asyncio.gather(
+    results = await asyncio.gather(
         *[dp.bot.send_message(admin, text=billing_text) for admin in ADMINS],
         return_exceptions=True
     )
+    for r in results:
+        if isinstance(r, Exception):
+            logger.error("Failed to notify admin: %s", r)
     try:
         await db.set_contract(database.data[2], message.from_user.id)
     except IndexError:
@@ -333,10 +341,13 @@ async def tech_support_message(message: types.Message, state: FSMContext):
             await dp.bot.send_message(admin_id, request_text)
             await dp.bot.send_message(admin_id, user_info_text, reply_markup=answer_reply)
 
-        await asyncio.gather(
+        results = await asyncio.gather(
             *[_notify_admin_tech(admin) for admin in ADMINS],
             return_exceptions=True
         )
+        for r in results:
+            if isinstance(r, Exception):
+                logger.error("Failed to notify admin: %s", r)
     await state.reset_state()
     msg = await message.answer(text=_("Заявка в опрацюванні, чекайте зв'язку\n"
                                       "Можете повернутись у головне меню скориставшись кнопкою знизу"),
@@ -395,10 +406,13 @@ async def request_client(message: types.Message, state: FSMContext):
             await dp.bot.send_message(admin_id, connect_text)
             await dp.bot.send_message(admin_id, user_info_text, reply_markup=answer_reply)
 
-        await asyncio.gather(
+        results = await asyncio.gather(
             *[_notify_admin_connect(admin) for admin in ADMINS],
             return_exceptions=True
         )
+        for r in results:
+            if isinstance(r, Exception):
+                logger.error("Failed to notify admin: %s", r)
     await state.reset_state()
     msg = await message.answer(text=_("Заявка в опрацюванні, чекайте зв'язку\n"
                                       "Можете повернутись у головне меню скориставшись кнопкою знизу"),

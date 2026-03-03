@@ -1,4 +1,7 @@
 import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
 
 from aiogram import types
 from aiogram.dispatcher.filters import Text
@@ -25,10 +28,13 @@ async def time_pay(message: types.Message):
                                    reply_markup=return_button)
         await db.message("BOT", 10001, msg.html_text, msg.date)
         notify_text = _("Користувач {} використав тимчасовий платіж!").format(user)
-        await asyncio.gather(
+        results = await asyncio.gather(
             *[dp.bot.send_message(admin, notify_text) for admin in ADMINS],
             return_exceptions=True
         )
+        for r in results:
+            if isinstance(r, Exception):
+                logger.error("Failed to notify admin about time pay: %s", r)
     else:
         msg = await message.answer(text=_("Ви не можете використати тимчасовий платіж!\n"
                                           "Користуватись тимчасовим платежем можна раз на місяць!"),

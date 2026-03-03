@@ -4,6 +4,8 @@ import random
 import re
 import uuid
 
+logger = logging.getLogger(__name__)
+
 import aiogram.utils.exceptions
 from aiogram import types
 from aiogram.dispatcher import FSMContext
@@ -145,10 +147,13 @@ async def get_invoice_contract(message: types.Message, state: FSMContext):
                                    f"Договір: {contract}\n"
                                    f"Сума: {payload} грн\n"
                                    f"ID інвойсу: {random_id}")
-            await asyncio.gather(
+            results = await asyncio.gather(
                 *[dp.bot.send_message(admin, invoice_notify_text) for admin in ADMINS],
                 return_exceptions=True
             )
+            for r in results:
+                if isinstance(r, Exception):
+                    logger.error("Failed to notify admin about invoice: %s", r)
             try:
                 await bot.send_invoice(message.from_user.id, **invoice.generate_invoice(), payload=str(amount_pay))
                 await state.reset_state(with_data=False)
@@ -222,10 +227,13 @@ async def process_successful_pay(message: types.Message, state: FSMContext):
             await database.pay_balance(contract=contract, payload=payload)
             logging.info(f"Manual payment OK: contract={contract}, payload={payload}, user={message.from_user.id}")
             notify_text = f"Користувач {contract} успішно поповнив рахунок на {payload} {message.successful_payment.currency}"
-            await asyncio.gather(
+            results = await asyncio.gather(
                 *[dp.bot.send_message(chat_id=admin, text=notify_text) for admin in ADMINS],
                 return_exceptions=True
             )
+            for r in results:
+                if isinstance(r, Exception):
+                    logger.error("Failed to notify admin about payment: %s", r)
             msg = await dp.bot.send_message(
                 chat_id=message.from_user.id,
                 text=__("Ваш рахунок поповнено на {} {}!").format(payload, message.successful_payment.currency),
@@ -257,10 +265,13 @@ async def process_successful_pay(message: types.Message, state: FSMContext):
             await database.pay_balance(contract=contract_str, payload=payload)
             logging.info(f"Auto-tariff payment OK: contract={contract_str}, payload={payload}, user={message.from_user.id}")
             notify_text = f"Користувач {contract_str} успішно поповнив рахунок на {payload} {message.successful_payment.currency}"
-            await asyncio.gather(
+            results = await asyncio.gather(
                 *[dp.bot.send_message(chat_id=admin, text=notify_text) for admin in ADMINS],
                 return_exceptions=True
             )
+            for r in results:
+                if isinstance(r, Exception):
+                    logger.error("Failed to notify admin about payment: %s", r)
             msg = await dp.bot.send_message(
                 chat_id=message.from_user.id,
                 text=__("Ваш рахунок поповнено на {} {}!").format(payload, message.successful_payment.currency),
@@ -268,15 +279,18 @@ async def process_successful_pay(message: types.Message, state: FSMContext):
             await db.message("BOT", 10001, msg.html_text, msg.date)
             await state.finish()
     except Exception as e:
-        logging.error(f"Payment processing error for user {message.from_user.id}: {e}", exc_info=True)
+        logger.error("Payment processing error for user %s: %s", message.from_user.id, e, exc_info=True)
         error_msg = await dp.bot.send_message(
             chat_id=message.from_user.id,
             text=__("На жаль, виникла помилка при обробці платежу. Будь ласка, зверніться до служби підтримки."),
             reply_markup=return_button)
         await db.message("BOT", 10001, error_msg.html_text, error_msg.date)
         error_notify_text = f"Помилка платежу user={message.from_user.id}: {e}"
-        await asyncio.gather(
+        results = await asyncio.gather(
             *[dp.bot.send_message(chat_id=admin, text=error_notify_text) for admin in ADMINS],
             return_exceptions=True
         )
+        for r in results:
+            if isinstance(r, Exception):
+                logger.error("Failed to notify admin about payment error: %s", r)
         await state.finish()

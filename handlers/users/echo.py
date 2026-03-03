@@ -70,7 +70,7 @@ async def bot_echo(message: types.Message):
                                f"Текст сообщения: {message.text}\n"
                                f"Телефон: {tel}\n"
                                f"Номер договору: {database.data[2]}\n")
-                await asyncio.gather(
+                results = await asyncio.gather(
                     *[dp.bot.send_message(chat_id=admin, text=notify_text,
                                           parse_mode='HTML', reply_markup=answer_reply)
                       for admin in ADMINS],
@@ -81,7 +81,7 @@ async def bot_echo(message: types.Message):
                                   f"Текст сообщения: {message.caption}\n"
                                   f"Телефон: {tel}\n"
                                   f"Номер договору: {database.data[2]}\n")
-                await asyncio.gather(
+                results = await asyncio.gather(
                     *[dp.bot.send_photo(chat_id=admin, photo=message.photo[-1].file_id,
                                         caption=notify_caption, parse_mode='HTML',
                                         reply_markup=answer_reply)
@@ -93,7 +93,7 @@ async def bot_echo(message: types.Message):
                                   f" {message.from_user.full_name}\n"
                                   f"Телефон: {tel}\n"
                                   f"Номер договору: {database.data[2]}\n")
-                await asyncio.gather(
+                results = await asyncio.gather(
                     *[dp.bot.send_document(chat_id=admin, document=message.document.file_id,
                                            caption=notify_caption, parse_mode='HTML',
                                            reply_markup=answer_reply)
@@ -105,15 +105,22 @@ async def bot_echo(message: types.Message):
                                   f" {message.from_user.full_name}\n"
                                   f"Телефон: {tel}\n"
                                   f"Номер договору: {database.data[2]}\n")
-                await asyncio.gather(
+                results = await asyncio.gather(
                     *[dp.bot.send_video(chat_id=admin, video=message.video.file_id,
                                         caption=notify_caption, parse_mode='HTML',
                                         reply_markup=answer_reply)
                       for admin in ADMINS],
                     return_exceptions=True
                 )
+            else:
+                results = []
+            for result in results:
+                if isinstance(result, Exception):
+                    logger.error("Failed to notify admin: %s", result)
+                elif hasattr(result, 'html_text'):
+                    await db.message("BOT", 10001, result.html_text, result.date)
         except Exception as err:
-            logging.exception(err)
+            logger.exception(err)
     else:
         await database.search_query(tel)
         if len(database.data) > 0:
@@ -141,7 +148,7 @@ async def bot_echo(message: types.Message):
                 notify_text = (f"Сообщения от пользователя: {message.from_user.full_name}\n"
                                f"Текст сообщения: {message.text}\n"
                                f"Пользователь без телефона")
-                await asyncio.gather(
+                results = await asyncio.gather(
                     *[dp.bot.send_message(chat_id=admin, text=notify_text,
                                           parse_mode='HTML', reply_markup=answer_reply)
                       for admin in ADMINS],
@@ -150,7 +157,7 @@ async def bot_echo(message: types.Message):
             elif message.content_type == 'photo':
                 notify_caption = (f"Сообщения от пользователя: {message.from_user.full_name}\n"
                                   f"Пользователь без телефона")
-                await asyncio.gather(
+                results = await asyncio.gather(
                     *[dp.bot.send_photo(chat_id=admin, photo=message.photo[-1].file_id,
                                         caption=notify_caption, parse_mode='HTML',
                                         reply_markup=answer_reply)
@@ -161,7 +168,7 @@ async def bot_echo(message: types.Message):
                 notify_caption = (f"Сообщения от пользователя:"
                                   f" {message.from_user.full_name}\n"
                                   f"Пользователь без телефона")
-                await asyncio.gather(
+                results = await asyncio.gather(
                     *[dp.bot.send_document(chat_id=admin, document=message.document.file_id,
                                            caption=notify_caption, reply_markup=answer_reply)
                       for admin in ADMINS],
@@ -171,15 +178,22 @@ async def bot_echo(message: types.Message):
                 notify_caption = (f"Сообщения от пользователя:"
                                   f" {message.from_user.full_name}\n"
                                   f"Пользователь без телефона")
-                await asyncio.gather(
+                results = await asyncio.gather(
                     *[dp.bot.send_video(chat_id=admin, video=message.video.file_id,
                                         caption=notify_caption, parse_mode='HTML',
                                         reply_markup=answer_reply)
                       for admin in ADMINS],
                     return_exceptions=True
                 )
+            else:
+                results = []
+            for result in results:
+                if isinstance(result, Exception):
+                    logger.error("Failed to notify admin: %s", result)
+                elif hasattr(result, 'html_text'):
+                    await db.message("BOT", 10001, result.html_text, result.date)
         except Exception as err:
-            logging.exception(err)
+            logger.exception(err)
 
 # Эхо хендлер, куда летят ВСЕ сообщения с указанным состоянием
 # @dp.message_handler(state="*", content_types=types.ContentTypes.ANY)

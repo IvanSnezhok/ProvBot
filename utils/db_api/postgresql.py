@@ -1,3 +1,4 @@
+import time
 from typing import Union
 
 import asyncpg
@@ -9,8 +10,12 @@ from data import config
 
 class Database:
 
+    _BAN_CACHE_TTL = 60  # 1 minute
+
     def __init__(self):
         self.pool: Union[Pool, None] = None
+        self._ban_cache = None
+        self._ban_cache_time = 0
 
     async def create(self):
         self.pool = await asyncpg.create_pool(
@@ -27,15 +32,14 @@ class Database:
                       execute: bool = False
                       ):
         async with self.pool.acquire() as connection:
-            connection: Connection
-            async with connection.transaction():
-                if fetch:
-                    result = await connection.fetch(command, *args)
-                elif fetchval:
-                    result = await connection.fetchval(command, *args)
-                elif fetchrow:
-                    result = await connection.fetchrow(command, *args)
-                elif execute:
+            if fetch:
+                result = await connection.fetch(command, *args)
+            elif fetchval:
+                result = await connection.fetchval(command, *args)
+            elif fetchrow:
+                result = await connection.fetchrow(command, *args)
+            elif execute:
+                async with connection.transaction():
                     result = await connection.execute(command, *args)
             return result
 
@@ -247,17 +251,32 @@ class Database:
 
     async def set_ban(self, telegram_id):
         sql = "UPDATE users SET ban=TRUE WHERE telegram_id=$1"
-        return await self.execute(sql, int(telegram_id), execute=True)
+        result = await self.execute(sql, int(telegram_id), execute=True)
+        self.invalidate_ban_cache()
+        return result
 
     async def set_unban(self, telegram_id):
         sql = "UPDATE users SET ban=FALSE WHERE telegram_id=$1"
-        return await self.execute(sql, int(telegram_id), execute=True)
+        result = await self.execute(sql, int(telegram_id), execute=True)
+        self.invalidate_ban_cache()
+        return result
 
     async def get_ban(self):
+        now = time.time()
+        if self._ban_cache is not None and (now - self._ban_cache_time) < self._BAN_CACHE_TTL:
+            return self._ban_cache
+
         sql = "SELECT telegram_id, contract FROM users WHERE ban=TRUE"
         rec_ban = await self.execute(sql, fetch=True)
         ban_list = [(i[0], i[1]) for i in rec_ban]
+
+        self._ban_cache = ban_list
+        self._ban_cache_time = now
         return ban_list
+
+    def invalidate_ban_cache(self):
+        self._ban_cache = None
+        self._ban_cache_time = 0
 
     async def insert_alarm(self, message, grp_alarm):
         if grp_alarm is None:

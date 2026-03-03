@@ -1,7 +1,10 @@
+import logging
 import xml.etree.ElementTree as ET
 import time
 
 import aiohttp
+
+logger = logging.getLogger(__name__)
 
 _cache = None
 _cache_time = 0
@@ -15,8 +18,10 @@ async def get_products():
         return _cache
 
     url = "https://sunrise.co.ua/marketplace-integration/google-feed/27bd50b19dc9c0d7d1ed3c5a7278cc49?langId=3"
-    async with aiohttp.ClientSession() as session:
+    timeout = aiohttp.ClientTimeout(total=30)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
         async with session.get(url) as response:
+            response.raise_for_status()
             content = await response.read()
     root = ET.fromstring(content)
 
@@ -40,7 +45,7 @@ async def get_products():
                 
             products.append(product)
         except AttributeError as e:
-            print(f"Помилка при парсингу товару: {e}")
+            logger.warning("Помилка при парсингу товару: %s", e)
             continue
 
     _cache = products
